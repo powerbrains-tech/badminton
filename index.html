@@ -3,142 +3,285 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ระบบจัดคิวแบดมินตัน (Badminton Queue)</title>
+    <title>Badminton Pro Rank</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;600&display=swap" rel="stylesheet">
     <style>
-        body { font-family: 'Kanit', sans-serif; background-color: #f3f4f6; }
-        .court-card { background: linear-gradient(135deg, #4ade80 0%, #22c55e 100%); }
+        body { font-family: 'Kanit', sans-serif; background-color: #f1f5f9; }
+        .rank-novice { color: #64748b; border-color: #64748b; } /* เทา */
+        .rank-bronze { color: #d97706; border-color: #d97706; } /* ทองแดง */
+        .rank-silver { color: #94a3b8; border-color: #94a3b8; } /* เงิน */
+        .rank-gold { color: #eab308; border-color: #eab308; } /* ทอง */
+        .rank-legend { color: #a855f7; border-color: #a855f7; background: linear-gradient(45deg, #f3e8ff, #fff); } /* ม่วง */
+        
+        .fade-in { animation: fadeIn 0.3s ease-in; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
     </style>
 </head>
-<body class="p-4 md:p-8 max-w-lg mx-auto">
+<body class="p-4 md:p-8 max-w-2xl mx-auto pb-20">
 
-    <div class="text-center mb-6">
-        <h1 class="text-3xl font-bold text-gray-800">🏸 Badminton Queue</h1>
-        <p class="text-gray-500">ระบบสุ่มจับคู่และจัดคิวแบบง่าย</p>
+    <div class="flex justify-between items-center mb-6">
+        <div>
+            <h1 class="text-3xl font-bold text-slate-800">🏸 Badminton Pro</h1>
+            <p class="text-slate-500 text-sm">ระบบจัดแรงค์และบันทึกสถิติ</p>
+        </div>
+        <button onclick="resetData()" class="text-xs text-red-400 border border-red-200 px-2 py-1 rounded hover:bg-red-50">ล้างข้อมูลใหม่</button>
     </div>
 
-    <div class="bg-white p-4 rounded-xl shadow-md mb-6">
-        <h2 class="font-bold text-lg mb-2">1. ลงชื่อผู้เล่น</h2>
+    <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 mb-6">
         <div class="flex gap-2">
-            <input type="text" id="playerName" placeholder="ชื่อเล่น (เช่น นนท์, บอย)" 
-                   class="flex-1 border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-400"
+            <input type="text" id="playerName" placeholder="ชื่อผู้เล่นใหม่..." 
+                   class="flex-1 bg-slate-50 border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400"
                    onkeypress="handleEnter(event)">
-            <button onclick="addPlayer()" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 font-bold">+</button>
-        </div>
-        <div class="mt-4">
-            <p class="text-sm text-gray-500 mb-1">รายชื่อผู้เล่นทั้งหมด (<span id="count">0</span> คน)</p>
-            <div id="playerList" class="flex flex-wrap gap-2">
-                </div>
+            <button onclick="addPlayer()" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 font-bold shadow-blue-200 shadow-lg">+</button>
         </div>
     </div>
 
     <div class="mb-6">
-        <button onclick="generateMatch()" class="w-full bg-green-600 text-white text-xl py-3 rounded-xl shadow-lg hover:bg-green-700 active:scale-95 transition font-bold">
-            🚀 สุ่มจับคู่ลงสนาม!
+        <button onclick="generateMatch()" class="w-full bg-indigo-600 text-white text-xl py-4 rounded-xl shadow-lg hover:bg-indigo-700 active:scale-95 transition font-bold flex justify-center items-center gap-2">
+            ⚡ จัดทีมตามความเก่ง
         </button>
+        <p class="text-center text-xs text-slate-400 mt-2">*ระบบจะดึงคนเล่นน้อยที่สุดลงก่อน แล้วเกลี่ยมือวางให้สูสี</p>
     </div>
 
-    <div id="courtSection" class="hidden">
-        <h2 class="font-bold text-lg mb-2 text-gray-700">กำลังแข่งขัน 🟢</h2>
-        <div class="court-card p-4 rounded-xl shadow-lg text-white text-center relative">
-            <div class="absolute top-2 left-2 bg-white/20 px-2 py-0.5 rounded text-xs">Court 1</div>
-            
-            <div class="flex justify-between items-center mt-4">
-                <div class="w-5/12">
-                    <div class="text-2xl font-bold" id="team1_1">Player A</div>
-                    <div class="text-2xl font-bold" id="team1_2">Player B</div>
+    <div id="courtSection" class="hidden fade-in mb-8">
+        <div class="bg-white rounded-2xl shadow-xl overflow-hidden border border-indigo-100">
+            <div class="bg-indigo-600 text-white text-center py-2 font-bold relative">
+                กำลังแข่งขัน 🏸
+                <button onclick="cancelMatch()" class="absolute right-3 top-2 text-xs text-white/70 hover:text-white">ยกเลิก</button>
+            </div>
+            <div class="p-6">
+                <div class="flex justify-between items-center bg-blue-50 p-3 rounded-lg border border-blue-100 mb-2 cursor-pointer hover:bg-blue-100 transition" onclick="finishMatch('A')">
+                    <div class="text-center w-full">
+                        <div class="font-bold text-blue-800 text-lg" id="pA1">Player 1</div>
+                        <div class="font-bold text-blue-800 text-lg" id="pA2">Player 2</div>
+                        <div class="text-xs text-blue-400 mt-1">TEAM A</div>
+                    </div>
+                    <div class="bg-blue-500 text-white px-3 py-1 rounded-full text-xs font-bold">กดเมื่อชนะ</div>
                 </div>
-                <div class="text-xl font-bold text-white/80">VS</div>
-                <div class="w-5/12">
-                    <div class="text-2xl font-bold" id="team2_1">Player C</div>
-                    <div class="text-2xl font-bold" id="team2_2">Player D</div>
+
+                <div class="text-center text-slate-400 text-xs my-1">VS</div>
+
+                <div class="flex justify-between items-center bg-red-50 p-3 rounded-lg border border-red-100 mt-2 cursor-pointer hover:bg-red-100 transition" onclick="finishMatch('B')">
+                    <div class="text-center w-full">
+                        <div class="font-bold text-red-800 text-lg" id="pB1">Player 3</div>
+                        <div class="font-bold text-red-800 text-lg" id="pB2">Player 4</div>
+                        <div class="text-xs text-red-400 mt-1">TEAM B</div>
+                    </div>
+                    <div class="bg-red-500 text-white px-3 py-1 rounded-full text-xs font-bold">กดเมื่อชนะ</div>
                 </div>
             </div>
-
-            <button onclick="finishMatch()" class="mt-6 w-full bg-white text-green-700 py-2 rounded-lg font-bold hover:bg-gray-100">
-                🏁 จบเกม (คืนคนเข้ากองกลาง)
-            </button>
         </div>
     </div>
 
-    <script>
-        // State เก็บข้อมูล
-        let players = [];
-        let isPlaying = false;
+    <div>
+        <h2 class="font-bold text-slate-700 mb-3 flex justify-between">
+            <span>🏆 อันดับผู้เล่น</span>
+            <span class="text-xs font-normal text-slate-400 self-end">ชนะ +20แต้ม / แพ้ +5แต้ม</span>
+        </h2>
+        <div id="playerList" class="space-y-2">
+            </div>
+    </div>
 
-        // ฟังก์ชันเพิ่มชื่อ
-        function addPlayer() {
-            const input = document.getElementById('playerName');
-            const name = input.value.trim();
-            
-            if (name) {
-                players.push(name);
-                input.value = '';
+    <script>
+        // --- 1. Data & State Management ---
+        let players = []; 
+        let currentMatch = null;
+
+        // โหลดข้อมูลเมื่อเปิดเว็บ
+        loadData();
+
+        function loadData() {
+            const saved = localStorage.getItem('badminton_pro_data');
+            if (saved) {
+                players = JSON.parse(saved);
+                // เรียงลำดับตามคะแนน (มากไปน้อย)
+                sortPlayers();
                 renderPlayers();
             }
         }
 
-        // กด Enter เพื่อเพิ่มชื่อได้เลย
-        function handleEnter(e) {
-            if (e.key === 'Enter') addPlayer();
-        }
-
-        // ลบชื่อออก
-        function removePlayer(index) {
-            players.splice(index, 1);
+        function saveData() {
+            localStorage.setItem('badminton_pro_data', JSON.stringify(players));
             renderPlayers();
         }
 
-        // แสดงผลรายชื่อ
-        function renderPlayers() {
-            const list = document.getElementById('playerList');
-            const count = document.getElementById('count');
-            list.innerHTML = '';
-            
-            players.forEach((p, index) => {
-                list.innerHTML += `
-                    <div class="bg-gray-100 px-3 py-1 rounded-full flex items-center gap-2 text-gray-700">
-                        ${p}
-                        <button onclick="removePlayer(${index})" class="text-red-400 hover:text-red-600 font-bold">×</button>
-                    </div>
-                `;
-            });
-            count.innerText = players.length;
+        function resetData() {
+            if(confirm('ลบข้อมูลผู้เล่นและสถิติทั้งหมด?')) {
+                localStorage.removeItem('badminton_pro_data');
+                players = [];
+                renderPlayers();
+            }
         }
 
-        // ฟังก์ชันสุ่มจับคู่ (Logic หลัก)
+        // --- 2. Player Logic ---
+        function addPlayer() {
+            const input = document.getElementById('playerName');
+            const name = input.value.trim();
+            if (!name) return;
+
+            // ตรวจสอบชื่อซ้ำ
+            if (players.some(p => p.name === name)) {
+                alert('ชื่อนี้มีอยู่แล้วครับ');
+                return;
+            }
+
+            players.push({
+                id: Date.now(),
+                name: name,
+                score: 1000, // คะแนนเริ่มต้น MMR
+                matches: 0,
+                wins: 0,
+                streak: 0
+            });
+            
+            input.value = '';
+            saveData();
+        }
+
+        function handleEnter(e) { if (e.key === 'Enter') addPlayer(); }
+
+        function deletePlayer(id) {
+            if(confirm('ลบผู้เล่นคนนี้?')) {
+                players = players.filter(p => p.id !== id);
+                saveData();
+            }
+        }
+
+        // คำนวณ Rank จาก Score
+        function getRank(score) {
+            if (score >= 1500) return { name: 'LEGEND', class: 'rank-legend' };
+            if (score >= 1300) return { name: 'GOLD', class: 'rank-gold' };
+            if (score >= 1200) return { name: 'SILVER', class: 'rank-silver' };
+            if (score >= 1100) return { name: 'BRONZE', class: 'rank-bronze' };
+            return { name: 'NOVICE', class: 'rank-novice' };
+        }
+
+        // --- 3. Matchmaking Logic (Smart Queue) ---
         function generateMatch() {
-            if (isPlaying) {
-                alert("มีคนแข่งอยู่ครับ กดจบเกมก่อนนะ!");
+            if (currentMatch) {
+                alert('มีคู่ที่กำลังแข่งอยู่ครับ กรุณาบันทึกผลก่อน');
                 return;
             }
             if (players.length < 4) {
-                alert("คนยังไม่ครบ 4 คนครับ หาเพื่อนมาเพิ่มหน่อย!");
+                alert('ต้องการผู้เล่นอย่างน้อย 4 คนครับ');
                 return;
             }
 
-            // สุ่ม 4 คน
-            // ใช้วิธี Shuffle Array แล้วหยิบ 4 คนแรก
-            const shuffled = [...players].sort(() => 0.5 - Math.random());
-            const selected = shuffled.slice(0, 4);
+            // A. เลือก 4 คน (Logic: คนที่แมตช์น้อยสุดได้เล่นก่อน ถ้าเท่ากันสุ่ม)
+            // Clone array เพื่อไม่กระทบตัวหลักเวลา sort
+            let pool = [...players].sort((a, b) => {
+                if (a.matches !== b.matches) return a.matches - b.matches; // เล่นน้อยสุดขึ้นก่อน
+                return 0.5 - Math.random(); // ถ้าเท่ากัน สุ่ม
+            });
+            
+            let selected = pool.slice(0, 4);
 
-            // แสดงผล
-            document.getElementById('team1_1').innerText = selected[0];
-            document.getElementById('team1_2').innerText = selected[1];
-            document.getElementById('team2_1').innerText = selected[2];
-            document.getElementById('team2_2').innerText = selected[3];
+            // B. จัดทีมให้สมดุล (Balancing)
+            // เรียง 4 คนที่ได้มา ตามความเก่ง (Score)
+            selected.sort((a, b) => b.score - a.score);
+            
+            // สูตร: ทีม 1 (เก่งสุด + อ่อนสุด) vs ทีม 2 (เก่งรอง + เก่งรอง)
+            // เพื่อให้ค่าเฉลี่ยทีมใกล้กันที่สุด
+            let teamA = [selected[0], selected[3]]; // อันดับ 1 คู่ 4
+            let teamB = [selected[1], selected[2]]; // อันดับ 2 คู่ 3
 
-            document.getElementById('courtSection').classList.remove('hidden');
-            isPlaying = true;
+            currentMatch = { teamA, teamB };
+            updateMatchUI();
         }
 
-        // ฟังก์ชันจบเกม
-        function finishMatch() {
-            if(confirm("จบเกมแล้วใช่ไหม?")) {
-                document.getElementById('courtSection').classList.add('hidden');
-                isPlaying = false;
+        function updateMatchUI() {
+            const ui = document.getElementById('courtSection');
+            ui.classList.remove('hidden');
+
+            document.getElementById('pA1').innerText = currentMatch.teamA[0].name;
+            document.getElementById('pA2').innerText = currentMatch.teamA[1].name;
+            document.getElementById('pB1').innerText = currentMatch.teamB[0].name;
+            document.getElementById('pB2').innerText = currentMatch.teamB[1].name;
+        }
+
+        function cancelMatch() {
+            currentMatch = null;
+            document.getElementById('courtSection').classList.add('hidden');
+        }
+
+        // --- 4. Finish Match & Update Stats ---
+        function finishMatch(winningTeam) {
+            let winners, losers;
+
+            if (winningTeam === 'A') {
+                winners = currentMatch.teamA;
+                losers = currentMatch.teamB;
+            } else {
+                winners = currentMatch.teamB;
+                losers = currentMatch.teamA;
             }
+
+            if(!confirm(`ยืนยันให้ทีม ${winningTeam} ชนะ?`)) return;
+
+            // อัปเดตคะแนน
+            // หา index ของผู้เล่นใน array หลักแล้วอัปเดต
+            players = players.map(p => {
+                // ถ้าเป็นผู้ชนะ
+                if (winners.some(w => w.id === p.id)) {
+                    return { 
+                        ...p, 
+                        matches: p.matches + 1, 
+                        wins: p.wins + 1, 
+                        score: p.score + 20 // ชนะได้ 20 แต้ม
+                    };
+                }
+                // ถ้าเป็นผู้แพ้
+                if (losers.some(l => l.id === p.id)) {
+                    return { 
+                        ...p, 
+                        matches: p.matches + 1, 
+                        score: Math.max(0, p.score + 5) // แพ้ได้ 5 แต้มปลอบใจ (ไม่ติดลบ)
+                    };
+                }
+                return p;
+            });
+
+            currentMatch = null;
+            document.getElementById('courtSection').classList.add('hidden');
+            sortPlayers();
+            saveData(); // บันทึกอัตโนมัติ
+        }
+
+        function sortPlayers() {
+            // เรียงตาม Score เป็นหลัก
+            players.sort((a, b) => b.score - a.score);
+        }
+
+        // --- 5. Render UI ---
+        function renderPlayers() {
+            const list = document.getElementById('playerList');
+            list.innerHTML = '';
+
+            players.forEach((p, index) => {
+                const rank = getRank(p.score);
+                const winRate = p.matches > 0 ? Math.round((p.wins / p.matches) * 100) : 0;
+                
+                list.innerHTML += `
+                    <div class="bg-white p-3 rounded-lg shadow-sm border border-slate-100 flex items-center justify-between ${rank.class.includes('legend') ? 'ring-2 ring-purple-200' : ''}">
+                        <div class="flex items-center gap-3">
+                            <div class="text-slate-400 font-bold w-4 text-center">${index + 1}</div>
+                            <div>
+                                <div class="font-bold text-slate-800 text-lg">${p.name}</div>
+                                <div class="text-xs border px-1.5 py-0.5 rounded inline-block font-semibold ${rank.class}">
+                                    ${rank.name}
+                                </div>
+                                <span class="text-xs text-slate-400 ml-1">Score: ${p.score}</span>
+                            </div>
+                        </div>
+                        <div class="text-right">
+                            <div class="text-xs text-slate-500">แข่ง ${p.matches} | ชนะ ${p.wins}</div>
+                            <div class="text-xs font-bold ${winRate >= 50 ? 'text-green-500' : 'text-orange-500'}">Win ${winRate}%</div>
+                        </div>
+                        <button onclick="deletePlayer(${p.id})" class="ml-2 text-slate-200 hover:text-red-400">×</button>
+                    </div>
+                `;
+            });
         }
     </script>
 </body>
