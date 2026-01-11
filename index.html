@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Badminton Ranking 🏆</title>
+    <title>Badminton Pro League 🏆</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;600&display=swap" rel="stylesheet">
     <style>
@@ -20,13 +20,18 @@
         .admin-only { display: none !important; } 
         .show-admin .admin-only { display: block !important; }
         .show-admin .admin-flex { display: flex !important; }
+
+        /* Score Badge Changes */
+        .score-up { color: #16a34a; }
+        .score-down { color: #dc2626; }
+        .score-draw { color: #d97706; }
     </style>
 </head>
 <body class="p-4 max-w-2xl mx-auto pb-40">
 
     <div class="flex justify-between items-center mb-4 sticky top-0 bg-[#f8fafc] z-20 py-2">
         <div>
-            <h1 class="text-2xl font-bold text-slate-800">🏸 Ranking <span class="text-indigo-600">Pro</span></h1>
+            <h1 class="text-2xl font-bold text-slate-800">🏸 Badminton <span class="text-indigo-600">Pro</span></h1>
             <div id="statusIndicator" class="text-[10px] inline-block px-2 py-0.5 rounded bg-gray-200 text-gray-500">Connecting...</div>
         </div>
         <button onclick="toggleAdmin()" class="text-xl p-2 bg-white shadow rounded-full hover:scale-110 transition">🔒</button>
@@ -59,15 +64,14 @@
         </div>
 
         <div class="flex p-1 bg-slate-100 rounded-lg mb-4">
-            <button onclick="setFilter('all')" id="tab-all" class="flex-1 py-1.5 text-xs font-bold rounded-md bg-white shadow text-indigo-600 transition">ตลอดกาล</button>
+            <button onclick="setFilter('all')" id="tab-all" class="flex-1 py-1.5 text-xs font-bold rounded-md bg-white shadow text-indigo-600 transition">ทั้งหมด</button>
             <button onclick="setFilter('month')" id="tab-month" class="flex-1 py-1.5 text-xs font-bold rounded-md text-slate-500 hover:bg-white/50 transition">เดือนนี้</button>
-            <button onclick="setFilter('week')" id="tab-week" class="flex-1 py-1.5 text-xs font-bold rounded-md text-slate-500 hover:bg-white/50 transition">อาทิตย์นี้</button>
             <button onclick="setFilter('day')" id="tab-day" class="flex-1 py-1.5 text-xs font-bold rounded-md text-slate-500 hover:bg-white/50 transition">วันนี้</button>
         </div>
 
         <div class="flex justify-between items-end mb-2 px-2">
-            <span class="text-sm font-bold text-slate-700" id="rankTitle">อันดับรวม (Score)</span>
-            <span class="text-[10px] text-slate-400">เช็คชื่อเล่นวันนี้ ✅</span>
+            <span class="text-sm font-bold text-slate-700" id="rankTitle">อันดับคะแนน (MMR)</span>
+            <span class="text-[10px] text-slate-400">เช็คชื่อ ✅</span>
         </div>
 
         <div id="listContainer" class="space-y-2 pb-10"></div>
@@ -78,7 +82,7 @@
         import { getFirestore, collection, addDoc, onSnapshot, doc, updateDoc, deleteDoc, setDoc, writeBatch, query, where, orderBy, limit } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore.js";
 
         // ------------------------------------------------------------------
-        // 🔴🔴 ใส่ Config ของคุณตรงนี้ (เหมือนเดิม) 🔴🔴
+        // 🔴🔴 Config เดิมของคุณ 🔴🔴
         const firebaseConfig = {
             apiKey: "AIzaSyC6VSnH2H5zyFPbya0axgP38WiGczYU-oU",
             authDomain: "badminton-smasher-ai.firebaseapp.com",
@@ -90,23 +94,27 @@
         };
         // ------------------------------------------------------------------
 
+        // ==========================================
+        // ⚙️ ตั้งค่าคะแนนตรงนี้ (Game Rules)
+        // ==========================================
+        const SCORE_WIN = 20;    // คะแนนเมื่อชนะ
+        const SCORE_DRAW = 5;    // คะแนนเมื่อเสมอ
+        const SCORE_LOSS = -10;  // คะแนนเมื่อแพ้ (ติดลบ)
+        // ==========================================
+
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
         
-        // References
         const playersRef = collection(db, "players");
-        const historyRef = collection(db, "match_history"); // New Collection for Analytics
+        const historyRef = collection(db, "match_history_v2"); // ใช้ Collection ใหม่เพื่อรองรับ Data แบบใหม่
         const systemRef = doc(db, "system", "courts_state");
 
-        // State
         let playersList = [];
         let activeMatches = [];
         let historyList = [];
-        let currentFilter = 'all'; // all, month, week, day
+        let currentFilter = 'all';
 
-        // --- 1. Real-time Listeners ---
-        
-        // Listen Players
+        // --- Listeners ---
         onSnapshot(playersRef, (snapshot) => {
             document.getElementById('statusIndicator').innerText = "Online 🟢";
             document.getElementById('statusIndicator').className = "text-[10px] inline-block px-2 py-0.5 rounded bg-green-100 text-green-700";
@@ -115,79 +123,54 @@
             renderList();
         });
 
-        // Listen Matches (Active)
         onSnapshot(systemRef, (docSnap) => {
             if (docSnap.exists()) activeMatches = docSnap.data().matches || [];
             else activeMatches = [];
             renderCourts();
         });
 
-        // Listen History (For Ranking) - Listen Last 2000 matches
         const qHistory = query(historyRef, orderBy("timestamp", "desc"), limit(2000));
         onSnapshot(qHistory, (snapshot) => {
             historyList = [];
             snapshot.forEach(doc => historyList.push(doc.data()));
-            renderList(); // Re-render when history updates
+            renderList();
         });
 
-        // --- 2. Ranking Logic ---
-
-        window.setFilter = (filter) => {
-            currentFilter = filter;
-            // Update Tab UI
-            ['all','month','week','day'].forEach(f => {
-                const btn = document.getElementById(`tab-${f}`);
-                if(f === filter) {
-                    btn.className = "flex-1 py-1.5 text-xs font-bold rounded-md bg-white shadow text-indigo-600 transition";
-                } else {
-                    btn.className = "flex-1 py-1.5 text-xs font-bold rounded-md text-slate-500 hover:bg-white/50 transition";
-                }
-            });
-            
-            // Update Title
-            const titles = { all: "อันดับรวม (MMR)", month: "ผลงานเดือนนี้ (แต้ม)", week: "ผลงานอาทิตย์นี้ (แต้ม)", day: "ผลงานวันนี้ (แต้ม)" };
-            document.getElementById('rankTitle').innerText = titles[filter];
-            
-            renderList();
-        }
-
+        // --- Helper: Stats Calculation ---
         function calculateStats(player, filter) {
-            // "All Time" uses the main score field
-            if (filter === 'all') return { value: player.score, label: 'MMR' };
+            // All Time -> ใช้ Score ปัจจุบัน
+            if (filter === 'all') return { value: player.score, label: 'MMR', displayClass: 'text-slate-800' };
 
-            // For periods, we calculate "Net Point Change" from history
+            // Period Filter
             const now = new Date();
             let cutoff = new Date();
-            
             if (filter === 'day') cutoff.setHours(0,0,0,0);
-            if (filter === 'week') {
-                const day = cutoff.getDay() || 7; 
-                if(day !== 1) cutoff.setHours(-24 * (day - 1)); 
-                else cutoff.setHours(0,0,0,0);
-            }
-            if (filter === 'month') cutoff.setDate(1); cutoff.setHours(0,0,0,0);
+            if (filter === 'month') { cutoff.setDate(1); cutoff.setHours(0,0,0,0); }
 
             const timestampCutoff = cutoff.getTime();
-
-            // Filter History
             const relevantMatches = historyList.filter(m => m.timestamp >= timestampCutoff);
             
-            let pointChange = 0;
-            let wins = 0;
-            let matches = 0;
+            let netChange = 0;
+            let wins = 0, draws = 0, losses = 0;
 
             relevantMatches.forEach(m => {
-                if (m.winners.includes(player.id)) {
-                    pointChange += 20;
-                    wins++;
-                    matches++;
-                } else if (m.losers.includes(player.id)) {
-                    pointChange += 5;
-                    matches++;
+                let change = 0;
+                if (m.teamA_ids.includes(player.id)) change = m.change_A;
+                else if (m.teamB_ids.includes(player.id)) change = m.change_B;
+                
+                if (change !== 0) {
+                    netChange += change;
+                    if (change > 0 && change >= SCORE_WIN) wins++;
+                    else if (change < 0) losses++;
+                    else draws++;
                 }
             });
 
-            return { value: pointChange, label: `+${pointChange} pts`, wins, matches };
+            // Display Logic
+            let label = netChange > 0 ? `+${netChange}` : `${netChange}`;
+            let displayClass = netChange > 0 ? 'text-green-600' : (netChange < 0 ? 'text-red-500' : 'text-slate-400');
+
+            return { value: netChange, label, displayClass, wins, draws, losses };
         }
 
         function getRankTier(score) {
@@ -199,13 +182,12 @@
             return { name: 'ROOKIE 🐣', color: 'rank-rookie', text: 'text-slate-400' };
         }
 
-        // --- 3. Core Logic (Add/Finish/Match) ---
-
+        // --- Logic ---
         document.getElementById('btnAdd').onclick = async () => {
             const name = document.getElementById('inputName').value.trim();
             if (!name) return;
             if(playersList.some(p => p.name == name)) { alert('ชื่อซ้ำ!'); return; }
-            await addDoc(playersRef, { name: name, score: 1000, matches: 0, wins: 0, isPresent: true, createdAt: Date.now() });
+            await addDoc(playersRef, { name: name, score: 1000, matches: 0, wins: 0, draws: 0, losses: 0, isPresent: true, createdAt: Date.now() });
             document.getElementById('inputName').value = '';
         };
 
@@ -224,7 +206,6 @@
              if(confirm("ลบคนนี้ถาวร?")) await deleteDoc(doc(db, "players", id));
         }
 
-        // Generate Match
         document.getElementById('btnGenerate').onclick = async () => {
             const maxCourts = parseInt(document.getElementById('courtCount').value);
             const slots = maxCourts - activeMatches.length;
@@ -236,7 +217,6 @@
                 m.teamB.forEach(p => playingIds.add(p.id));
             });
 
-            // Filter & Sort
             let pool = playersList.filter(p => p.isPresent && !playingIds.has(p.id));
             if (pool.length < 4) return alert("คนไม่พอ!");
             
@@ -248,8 +228,7 @@
                 let sel = pool.slice(0, 4);
                 pool = pool.slice(4);
                 
-                // Balance Teams
-                sel.sort((a, b) => b.score - a.score); // เก่งสุดอยู่ index 0
+                sel.sort((a, b) => b.score - a.score);
                 
                 newMatches.push({
                     id: Date.now() + i,
@@ -267,39 +246,70 @@
             let i = 1; while(used.has(i)) i++; return i;
         }
 
-        // Finish Match & SAVE HISTORY
-        window.finishMatch = async (matchId, winnerTeam) => {
-            if (!confirm(`ทีม ${winnerTeam} ชนะ?`)) return;
+        // --- NEW: Finish Match Logic with 3 Outcomes ---
+        window.finishMatch = async (matchId, result) => {
+            // result: 'A_WIN' | 'B_WIN' | 'DRAW'
+            const msg = result === 'DRAW' ? 'ยืนยันผล เสมอ?' : `ยืนยันทีม ${result === 'A_WIN' ? 'A' : 'B'} ชนะ?`;
+            if (!confirm(msg)) return;
+
             const match = activeMatches.find(m => m.id === matchId);
             if (!match) return;
 
-            const winners = winnerTeam === 'A' ? match.teamA : match.teamB;
-            const losers = winnerTeam === 'A' ? match.teamB : match.teamA;
             const batch = writeBatch(db);
 
-            // 1. Update Players
-            winners.forEach(p => {
+            // Determine Points Change
+            let changeA = 0;
+            let changeB = 0;
+
+            if (result === 'A_WIN') {
+                changeA = SCORE_WIN;
+                changeB = SCORE_LOSS;
+            } else if (result === 'B_WIN') {
+                changeA = SCORE_LOSS;
+                changeB = SCORE_WIN;
+            } else { // DRAW
+                changeA = SCORE_DRAW;
+                changeB = SCORE_DRAW;
+            }
+
+            // Update Team A Players
+            match.teamA.forEach(p => {
                 const ref = doc(db, "players", p.id);
                 const curr = playersList.find(x => x.id === p.id);
-                batch.update(ref, { score: curr.score + 20, matches: curr.matches + 1, wins: curr.wins + 1 });
-            });
-            losers.forEach(p => {
-                const ref = doc(db, "players", p.id);
-                const curr = playersList.find(x => x.id === p.id);
-                batch.update(ref, { score: Math.max(0, curr.score + 5), matches: curr.matches + 1 });
+                if(curr) {
+                    const newScore = Math.max(0, curr.score + changeA); // No negative score
+                    const wins = curr.wins + (result === 'A_WIN' ? 1 : 0);
+                    const draws = (curr.draws || 0) + (result === 'DRAW' ? 1 : 0);
+                    const losses = (curr.losses || 0) + (changeA < 0 ? 1 : 0);
+                    batch.update(ref, { score: newScore, matches: curr.matches + 1, wins, draws, losses });
+                }
             });
 
-            // 2. Save History (สำคัญมากสำหรับ Filter รายเดือน)
-            const historyDoc = doc(historyRef); // Auto ID
+            // Update Team B Players
+            match.teamB.forEach(p => {
+                const ref = doc(db, "players", p.id);
+                const curr = playersList.find(x => x.id === p.id);
+                if(curr) {
+                    const newScore = Math.max(0, curr.score + changeB); // No negative score
+                    const wins = curr.wins + (result === 'B_WIN' ? 1 : 0);
+                    const draws = (curr.draws || 0) + (result === 'DRAW' ? 1 : 0);
+                    const losses = (curr.losses || 0) + (changeB < 0 ? 1 : 0);
+                    batch.update(ref, { score: newScore, matches: curr.matches + 1, wins, draws, losses });
+                }
+            });
+
+            // Save Advanced History
+            const historyDoc = doc(historyRef);
             batch.set(historyDoc, {
                 timestamp: Date.now(),
-                winners: winners.map(p => p.id),
-                losers: losers.map(p => p.id),
-                points_winner: 20,
-                points_loser: 5
+                result_type: result,
+                teamA_ids: match.teamA.map(p => p.id),
+                teamB_ids: match.teamB.map(p => p.id),
+                change_A: changeA,
+                change_B: changeB
             });
 
-            // 3. Clear Court
+            // Clear Court
             const remaining = activeMatches.filter(m => m.id !== matchId);
             batch.set(systemRef, { matches: remaining });
 
@@ -312,8 +322,19 @@
             await setDoc(systemRef, { matches: remaining });
         }
 
-        // --- Render UI ---
+        window.setFilter = (filter) => {
+            currentFilter = filter;
+            ['all','month','day'].forEach(f => {
+                const btn = document.getElementById(`tab-${f}`);
+                if(f === filter) btn.className = "flex-1 py-1.5 text-xs font-bold rounded-md bg-white shadow text-indigo-600 transition";
+                else btn.className = "flex-1 py-1.5 text-xs font-bold rounded-md text-slate-500 hover:bg-white/50 transition";
+            });
+            const titles = { all: "อันดับคะแนน (MMR)", month: "ผลงานเดือนนี้ (แต้ม)", day: "ผลงานวันนี้ (แต้ม)" };
+            document.getElementById('rankTitle').innerText = titles[filter];
+            renderList();
+        }
 
+        // --- Render ---
         function renderCourts() {
             const container = document.getElementById('courtsContainer');
             container.innerHTML = '';
@@ -326,19 +347,23 @@
 
             activeMatches.forEach(m => {
                 container.innerHTML += `
-                    <div class="rounded-xl p-1 shadow-lg text-white bg-gradient-to-br from-indigo-500 to-blue-600 court-card relative">
-                        <div class="absolute top-2 left-2 bg-black/20 px-2 rounded text-xs font-bold">Court ${m.courtNo}</div>
+                    <div class="rounded-xl p-1 shadow-lg text-white bg-gradient-to-br from-slate-700 to-slate-800 court-card relative">
+                        <div class="absolute top-2 left-2 bg-white/20 px-2 rounded text-xs font-bold">Court ${m.courtNo}</div>
                         <button onclick="cancelMatch(${m.id})" class="absolute top-2 right-2 text-white/50 hover:text-white text-xs admin-only">✖</button>
                         
                         <div class="bg-white rounded-lg p-3 text-slate-800 mt-8">
-                            <div class="flex justify-between items-center mb-2 p-1 rounded hover:bg-slate-50">
-                                <div class="text-sm font-bold leading-tight">${m.teamA[0].name}<br>${m.teamA[1].name}</div>
-                                <button onclick="finishMatch(${m.id}, 'A')" class="admin-only bg-green-100 text-green-700 px-3 py-1 rounded-full text-xs font-bold">ชนะ</button>
+                            <div class="flex justify-between items-center mb-1 p-1 rounded hover:bg-indigo-50 border-l-4 border-indigo-500">
+                                <div class="text-sm font-bold leading-tight pl-2">${m.teamA[0].name}<br>${m.teamA[1].name}</div>
+                                <button onclick="finishMatch(${m.id}, 'A_WIN')" class="admin-only bg-indigo-100 text-indigo-700 px-3 py-1 rounded-full text-xs font-bold hover:bg-indigo-200">A ชนะ</button>
                             </div>
-                            <div class="text-center text-[10px] text-slate-300 font-bold">- VS -</div>
-                            <div class="flex justify-between items-center mt-2 p-1 rounded hover:bg-slate-50">
-                                <div class="text-sm font-bold leading-tight">${m.teamB[0].name}<br>${m.teamB[1].name}</div>
-                                <button onclick="finishMatch(${m.id}, 'B')" class="admin-only bg-green-100 text-green-700 px-3 py-1 rounded-full text-xs font-bold">ชนะ</button>
+                            
+                            <div class="flex justify-center my-1">
+                                <button onclick="finishMatch(${m.id}, 'DRAW')" class="admin-only bg-slate-100 text-slate-500 px-4 py-0.5 rounded-full text-[10px] font-bold hover:bg-slate-200 border border-slate-300">เสมอ</button>
+                            </div>
+
+                            <div class="flex justify-between items-center mt-1 p-1 rounded hover:bg-orange-50 border-l-4 border-orange-500">
+                                <div class="text-sm font-bold leading-tight pl-2">${m.teamB[0].name}<br>${m.teamB[1].name}</div>
+                                <button onclick="finishMatch(${m.id}, 'B_WIN')" class="admin-only bg-orange-100 text-orange-700 px-3 py-1 rounded-full text-xs font-bold hover:bg-orange-200">B ชนะ</button>
                             </div>
                         </div>
                     </div>
@@ -350,27 +375,25 @@
             const list = document.getElementById('listContainer');
             list.innerHTML = '';
             
-            // Map data with stats
             let displayList = playersList.map(p => {
                 const stats = calculateStats(p, currentFilter);
                 return { ...p, ...stats };
             });
 
-            // Sort: Value (Score or Point Change) DESC
+            // Sort logic
             displayList.sort((a, b) => b.value - a.value);
 
             const playingIds = new Set();
             activeMatches.forEach(m => { m.teamA.forEach(p => playingIds.add(p.id)); m.teamB.forEach(p => playingIds.add(p.id)); });
 
             displayList.forEach((p, idx) => {
-                const rankInfo = getRankTier(p.score); // Rank Tier always based on Total Score
+                if (currentFilter !== 'all' && p.value === 0) return; // Hide inactivity in period view
+
+                const rankInfo = getRankTier(p.score);
                 const isPlaying = playingIds.has(p.id);
-                
-                // ถ้าดูรายวัน/เดือน ให้โชว์แค่คนที่มีความเคลื่อนไหว (value > 0)
-                if (currentFilter !== 'all' && p.value === 0) return;
 
                 list.innerHTML += `
-                    <div class="flex justify-between items-center p-3 rounded-lg border border-slate-100 mb-2 ${rankInfo.color} ${!p.isPresent ? 'opacity-60 bg-slate-50' : 'bg-white'} relative">
+                    <div class="flex justify-between items-center p-3 rounded-lg border border-slate-100 mb-2 ${rankInfo.color} ${!p.isPresent ? 'opacity-50 bg-slate-50 grayscale' : 'bg-white'} relative">
                         <div class="flex items-center gap-3">
                             <div class="admin-only">
                                 <input type="checkbox" ${p.isPresent ? 'checked' : ''} onchange="togglePresence('${p.id}', ${p.isPresent})" class="w-4 h-4 rounded text-indigo-600 cursor-pointer">
@@ -381,21 +404,23 @@
                                     ${p.name}
                                     ${isPlaying ? '<span class="text-[8px] bg-indigo-500 text-white px-1.5 rounded animate-pulse">PLAYING</span>' : ''}
                                 </div>
-                                <div class="text-[10px] ${rankInfo.text} font-bold tracking-wide">${rankInfo.name}</div>
+                                <div class="text-[10px] ${rankInfo.text} font-bold tracking-wide flex gap-2">
+                                    ${rankInfo.name} 
+                                    <span class="text-slate-400 font-normal">| W:${p.wins || 0} D:${p.draws || 0} L:${p.losses || 0}</span>
+                                </div>
                             </div>
                         </div>
                         <div class="text-right">
-                            <div class="font-bold text-lg ${currentFilter === 'all' ? 'text-slate-800' : 'text-green-600'}">${currentFilter === 'all' ? p.value : '+' + p.value}</div>
-                            <div class="text-[10px] text-slate-400">${currentFilter === 'all' ? (p.matches ? Math.round(p.wins/p.matches*100) : 0) + '% Win' : p.matches + ' แมตช์'}</div>
+                            <div class="font-bold text-lg ${p.displayClass}">${p.label}</div>
+                            <div class="text-[10px] text-slate-400">แข่ง ${p.matches}</div>
                         </div>
                     </div>
                 `;
             });
-            
-            if(list.innerHTML === '') list.innerHTML = `<div class="text-center text-sm text-slate-400 py-4">ยังไม่มีข้อมูลในช่วงเวลานี้</div>`;
+
+            if(list.innerHTML === '') list.innerHTML = `<div class="text-center text-sm text-slate-400 py-4">ยังไม่มีข้อมูล...</div>`;
         }
 
-        // Admin Toggle
         window.toggleAdmin = function() {
             const pass = prompt("Admin Password:");
             if (pass === "1234") { 
