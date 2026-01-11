@@ -3,285 +3,266 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Badminton Pro Rank</title>
+    <title>Badminton Real-time ⚡</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;600&display=swap" rel="stylesheet">
     <style>
-        body { font-family: 'Kanit', sans-serif; background-color: #f1f5f9; }
-        .rank-novice { color: #64748b; border-color: #64748b; } /* เทา */
-        .rank-bronze { color: #d97706; border-color: #d97706; } /* ทองแดง */
-        .rank-silver { color: #94a3b8; border-color: #94a3b8; } /* เงิน */
-        .rank-gold { color: #eab308; border-color: #eab308; } /* ทอง */
-        .rank-legend { color: #a855f7; border-color: #a855f7; background: linear-gradient(45deg, #f3e8ff, #fff); } /* ม่วง */
-        
-        .fade-in { animation: fadeIn 0.3s ease-in; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        body { font-family: 'Kanit', sans-serif; background-color: #f8fafc; }
+        .rank-novice { background-color: #f1f5f9; color: #64748b; }
+        .rank-gold { background: linear-gradient(135deg, #fcd34d 0%, #f59e0b 100%); color: white; }
+        .court-active { animation: pulse 2s infinite; }
+        @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(79, 70, 229, 0.4); } 70% { box-shadow: 0 0 0 10px rgba(79, 70, 229, 0); } 100% { box-shadow: 0 0 0 0 rgba(79, 70, 229, 0); } }
     </style>
 </head>
-<body class="p-4 md:p-8 max-w-2xl mx-auto pb-20">
+<body class="p-4 max-w-md mx-auto pb-20">
 
     <div class="flex justify-between items-center mb-6">
-        <div>
-            <h1 class="text-3xl font-bold text-slate-800">🏸 Badminton Pro</h1>
-            <p class="text-slate-500 text-sm">ระบบจัดแรงค์และบันทึกสถิติ</p>
-        </div>
-        <button onclick="resetData()" class="text-xs text-red-400 border border-red-200 px-2 py-1 rounded hover:bg-red-50">ล้างข้อมูลใหม่</button>
+        <h1 class="text-2xl font-bold text-slate-800">🏸 Badminton <span class="text-indigo-600 text-sm align-top">Live</span></h1>
+        <div id="statusIndicator" class="text-xs px-2 py-1 rounded bg-gray-200 text-gray-500">Connecting...</div>
     </div>
 
-    <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 mb-6">
-        <div class="flex gap-2">
-            <input type="text" id="playerName" placeholder="ชื่อผู้เล่นใหม่..." 
-                   class="flex-1 bg-slate-50 border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400"
-                   onkeypress="handleEnter(event)">
-            <button onclick="addPlayer()" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 font-bold shadow-blue-200 shadow-lg">+</button>
+    <div id="matchSection" class="hidden mb-6">
+        <div class="bg-indigo-600 rounded-xl p-1 shadow-lg court-active relative">
+             <div class="text-center text-white text-xs font-bold py-1">LIVE MATCH 🔴</div>
+             <button id="cancelBtn" class="absolute top-1 right-2 text-white/50 text-xs hover:text-white">ยกเลิก</button>
+             
+             <div class="bg-white rounded-lg p-4">
+                 <div class="flex justify-between items-center mb-2 p-2 rounded hover:bg-indigo-50 cursor-pointer border border-transparent hover:border-indigo-100" id="btnWinA">
+                     <div class="text-left">
+                         <div class="font-bold text-lg text-slate-800" id="nameA1">...</div>
+                         <div class="font-bold text-lg text-slate-800" id="nameA2">...</div>
+                     </div>
+                     <div class="bg-indigo-100 text-indigo-700 px-3 py-1 rounded-full text-xs font-bold">กดชนะ</div>
+                 </div>
+
+                 <div class="text-center text-xs text-slate-300 my-1">- VS -</div>
+
+                 <div class="flex justify-between items-center mt-2 p-2 rounded hover:bg-orange-50 cursor-pointer border border-transparent hover:border-orange-100" id="btnWinB">
+                     <div class="text-left">
+                         <div class="font-bold text-lg text-slate-800" id="nameB1">...</div>
+                         <div class="font-bold text-lg text-slate-800" id="nameB2">...</div>
+                     </div>
+                     <div class="bg-orange-100 text-orange-700 px-3 py-1 rounded-full text-xs font-bold">กดชนะ</div>
+                 </div>
+             </div>
         </div>
     </div>
 
     <div class="mb-6">
-        <button onclick="generateMatch()" class="w-full bg-indigo-600 text-white text-xl py-4 rounded-xl shadow-lg hover:bg-indigo-700 active:scale-95 transition font-bold flex justify-center items-center gap-2">
-            ⚡ จัดทีมตามความเก่ง
+        <button id="btnGenerate" class="w-full bg-slate-800 text-white py-3 rounded-xl font-bold shadow hover:bg-slate-900 active:scale-95 transition hidden">
+            🎲 จับคู่เล่นรอบต่อไป
         </button>
-        <p class="text-center text-xs text-slate-400 mt-2">*ระบบจะดึงคนเล่นน้อยที่สุดลงก่อน แล้วเกลี่ยมือวางให้สูสี</p>
     </div>
 
-    <div id="courtSection" class="hidden fade-in mb-8">
-        <div class="bg-white rounded-2xl shadow-xl overflow-hidden border border-indigo-100">
-            <div class="bg-indigo-600 text-white text-center py-2 font-bold relative">
-                กำลังแข่งขัน 🏸
-                <button onclick="cancelMatch()" class="absolute right-3 top-2 text-xs text-white/70 hover:text-white">ยกเลิก</button>
-            </div>
-            <div class="p-6">
-                <div class="flex justify-between items-center bg-blue-50 p-3 rounded-lg border border-blue-100 mb-2 cursor-pointer hover:bg-blue-100 transition" onclick="finishMatch('A')">
-                    <div class="text-center w-full">
-                        <div class="font-bold text-blue-800 text-lg" id="pA1">Player 1</div>
-                        <div class="font-bold text-blue-800 text-lg" id="pA2">Player 2</div>
-                        <div class="text-xs text-blue-400 mt-1">TEAM A</div>
-                    </div>
-                    <div class="bg-blue-500 text-white px-3 py-1 rounded-full text-xs font-bold">กดเมื่อชนะ</div>
-                </div>
-
-                <div class="text-center text-slate-400 text-xs my-1">VS</div>
-
-                <div class="flex justify-between items-center bg-red-50 p-3 rounded-lg border border-red-100 mt-2 cursor-pointer hover:bg-red-100 transition" onclick="finishMatch('B')">
-                    <div class="text-center w-full">
-                        <div class="font-bold text-red-800 text-lg" id="pB1">Player 3</div>
-                        <div class="font-bold text-red-800 text-lg" id="pB2">Player 4</div>
-                        <div class="text-xs text-red-400 mt-1">TEAM B</div>
-                    </div>
-                    <div class="bg-red-500 text-white px-3 py-1 rounded-full text-xs font-bold">กดเมื่อชนะ</div>
-                </div>
-            </div>
+    <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-4">
+        <div class="flex gap-2 mb-4">
+            <input type="text" id="inputName" placeholder="ชื่อเล่น..." class="flex-1 bg-slate-50 border rounded px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-indigo-500">
+            <button id="btnAdd" class="bg-indigo-600 text-white px-4 rounded font-bold hover:bg-indigo-700">+</button>
         </div>
-    </div>
 
-    <div>
-        <h2 class="font-bold text-slate-700 mb-3 flex justify-between">
-            <span>🏆 อันดับผู้เล่น</span>
-            <span class="text-xs font-normal text-slate-400 self-end">ชนะ +20แต้ม / แพ้ +5แต้ม</span>
-        </h2>
-        <div id="playerList" class="space-y-2">
+        <div class="flex justify-between text-xs text-slate-400 mb-2 px-2">
+            <span>ผู้เล่น (<span id="playerCount">0</span>)</span>
+            <span>Score (Win%)</span>
+        </div>
+        <div id="listContainer" class="space-y-2">
             </div>
     </div>
 
-    <script>
-        // --- 1. Data & State Management ---
-        let players = []; 
-        let currentMatch = null;
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js";
+        import { getFirestore, collection, addDoc, onSnapshot, doc, updateDoc, deleteDoc, setDoc } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore.js";
 
-        // โหลดข้อมูลเมื่อเปิดเว็บ
-        loadData();
+        // ------------------------------------------------------------------
+        // apiKey: "AIzaSyC6VSnH2H5zyFPbya0axgP38WiGczYU-oU",
+  authDomain: "badminton-smasher-ai.firebaseapp.com",
+  projectId: "badminton-smasher-ai",
+  storageBucket: "badminton-smasher-ai.firebasestorage.app",
+  messagingSenderId: "518167738562",
+  appId: "1:518167738562:web:8ba84a7c1a350d16e3e35b",
+  measurementId: "G-6X20YG49K9"
+        // ------------------------------------------------------------------
+        const firebaseConfig = {
+            apiKey: "AIzaSyDxxxxxxxxxxxxxxxxxxxxxxxx",
+            authDomain: "xxxxxx.firebaseapp.com",
+            projectId: "xxxxxx",
+            storageBucket: "xxxxxx.appspot.com",
+            messagingSenderId: "123456789",
+            appId: "1:123456789:web:xxxxxx"
+        };
+        // ------------------------------------------------------------------
 
-        function loadData() {
-            const saved = localStorage.getItem('badminton_pro_data');
-            if (saved) {
-                players = JSON.parse(saved);
-                // เรียงลำดับตามคะแนน (มากไปน้อย)
-                sortPlayers();
-                renderPlayers();
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        const statusDiv = document.getElementById('statusIndicator');
+
+        // References
+        const playersRef = collection(db, "players");
+        const matchRef = doc(db, "system", "current_match");
+
+        let playersList = [];
+        let currentMatchData = null;
+
+        // 1. Real-time Listener: Players
+        onSnapshot(playersRef, (snapshot) => {
+            statusDiv.innerText = "Online 🟢";
+            statusDiv.className = "text-xs px-2 py-1 rounded bg-green-100 text-green-700";
+            
+            playersList = [];
+            snapshot.forEach(doc => {
+                playersList.push({ id: doc.id, ...doc.data() });
+            });
+
+            // Sort logic: Score มากสุดขึ้นก่อน
+            playersList.sort((a, b) => b.score - a.score);
+            renderList();
+        });
+
+        // 2. Real-time Listener: Match
+        onSnapshot(matchRef, (docSnap) => {
+            if (docSnap.exists()) {
+                currentMatchData = docSnap.data();
+                if(currentMatchData.active) {
+                    renderMatch(currentMatchData);
+                } else {
+                    hideMatch();
+                }
+            } else {
+                hideMatch();
             }
-        }
+        });
 
-        function saveData() {
-            localStorage.setItem('badminton_pro_data', JSON.stringify(players));
-            renderPlayers();
-        }
+        // --- Functions ---
 
-        function resetData() {
-            if(confirm('ลบข้อมูลผู้เล่นและสถิติทั้งหมด?')) {
-                localStorage.removeItem('badminton_pro_data');
-                players = [];
-                renderPlayers();
-            }
-        }
-
-        // --- 2. Player Logic ---
-        function addPlayer() {
-            const input = document.getElementById('playerName');
-            const name = input.value.trim();
+        // Add Player
+        document.getElementById('btnAdd').onclick = async () => {
+            const name = document.getElementById('inputName').value.trim();
             if (!name) return;
+            
+            // Check duplicate name local check (for speed)
+            if(playersList.some(p => p.name == name)) { alert('ชื่อซ้ำ!'); return; }
 
-            // ตรวจสอบชื่อซ้ำ
-            if (players.some(p => p.name === name)) {
-                alert('ชื่อนี้มีอยู่แล้วครับ');
-                return;
-            }
-
-            players.push({
-                id: Date.now(),
+            await addDoc(playersRef, {
                 name: name,
-                score: 1000, // คะแนนเริ่มต้น MMR
+                score: 1000,
                 matches: 0,
                 wins: 0,
-                streak: 0
+                createdAt: Date.now()
             });
+            document.getElementById('inputName').value = '';
+        };
+
+        // Generate Match
+        document.getElementById('btnGenerate').onclick = async () => {
+            if (playersList.length < 4) return alert('คนไม่พอ (ต้อง 4 คน)');
             
-            input.value = '';
-            saveData();
-        }
-
-        function handleEnter(e) { if (e.key === 'Enter') addPlayer(); }
-
-        function deletePlayer(id) {
-            if(confirm('ลบผู้เล่นคนนี้?')) {
-                players = players.filter(p => p.id !== id);
-                saveData();
-            }
-        }
-
-        // คำนวณ Rank จาก Score
-        function getRank(score) {
-            if (score >= 1500) return { name: 'LEGEND', class: 'rank-legend' };
-            if (score >= 1300) return { name: 'GOLD', class: 'rank-gold' };
-            if (score >= 1200) return { name: 'SILVER', class: 'rank-silver' };
-            if (score >= 1100) return { name: 'BRONZE', class: 'rank-bronze' };
-            return { name: 'NOVICE', class: 'rank-novice' };
-        }
-
-        // --- 3. Matchmaking Logic (Smart Queue) ---
-        function generateMatch() {
-            if (currentMatch) {
-                alert('มีคู่ที่กำลังแข่งอยู่ครับ กรุณาบันทึกผลก่อน');
-                return;
-            }
-            if (players.length < 4) {
-                alert('ต้องการผู้เล่นอย่างน้อย 4 คนครับ');
-                return;
-            }
-
-            // A. เลือก 4 คน (Logic: คนที่แมตช์น้อยสุดได้เล่นก่อน ถ้าเท่ากันสุ่ม)
-            // Clone array เพื่อไม่กระทบตัวหลักเวลา sort
-            let pool = [...players].sort((a, b) => {
-                if (a.matches !== b.matches) return a.matches - b.matches; // เล่นน้อยสุดขึ้นก่อน
-                return 0.5 - Math.random(); // ถ้าเท่ากัน สุ่ม
-            });
-            
+            // Logic จัดทีม (เหมือนเดิม)
+            // 1. หา 4 คนที่ match น้อยสุด
+            let pool = [...playersList].sort((a, b) => a.matches - b.matches || 0.5 - Math.random());
             let selected = pool.slice(0, 4);
-
-            // B. จัดทีมให้สมดุล (Balancing)
-            // เรียง 4 คนที่ได้มา ตามความเก่ง (Score)
+            
+            // 2. เรียงตามความเก่งเพื่อแบ่งข้าง
             selected.sort((a, b) => b.score - a.score);
             
-            // สูตร: ทีม 1 (เก่งสุด + อ่อนสุด) vs ทีม 2 (เก่งรอง + เก่งรอง)
-            // เพื่อให้ค่าเฉลี่ยทีมใกล้กันที่สุด
-            let teamA = [selected[0], selected[3]]; // อันดับ 1 คู่ 4
-            let teamB = [selected[1], selected[2]]; // อันดับ 2 คู่ 3
+            // Team A: #1 & #4, Team B: #2 & #3
+            const matchData = {
+                active: true,
+                teamA: [selected[0], selected[3]],
+                teamB: [selected[1], selected[2]]
+            };
 
-            currentMatch = { teamA, teamB };
-            updateMatchUI();
-        }
+            // Save to Firebase (Everyone will see this update immediately)
+            await setDoc(matchRef, matchData);
+        };
 
-        function updateMatchUI() {
-            const ui = document.getElementById('courtSection');
-            ui.classList.remove('hidden');
+        // Finish Match
+        async function finishMatch(winnerTeam) {
+            if (!currentMatchData || !currentMatchData.active) return;
+            if (!confirm(`ยืนยันทีม ${winnerTeam} ชนะ?`)) return;
 
-            document.getElementById('pA1').innerText = currentMatch.teamA[0].name;
-            document.getElementById('pA2').innerText = currentMatch.teamA[1].name;
-            document.getElementById('pB1').innerText = currentMatch.teamB[0].name;
-            document.getElementById('pB2').innerText = currentMatch.teamB[1].name;
-        }
+            const winners = winnerTeam === 'A' ? currentMatchData.teamA : currentMatchData.teamB;
+            const losers = winnerTeam === 'A' ? currentMatchData.teamB : currentMatchData.teamA;
 
-        function cancelMatch() {
-            currentMatch = null;
-            document.getElementById('courtSection').classList.add('hidden');
-        }
+            // Update scores in Firebase
+            // ต้องวนลูปอัปเดตทีละคน
+            const updatePromises = [];
 
-        // --- 4. Finish Match & Update Stats ---
-        function finishMatch(winningTeam) {
-            let winners, losers;
-
-            if (winningTeam === 'A') {
-                winners = currentMatch.teamA;
-                losers = currentMatch.teamB;
-            } else {
-                winners = currentMatch.teamB;
-                losers = currentMatch.teamA;
-            }
-
-            if(!confirm(`ยืนยันให้ทีม ${winningTeam} ชนะ?`)) return;
-
-            // อัปเดตคะแนน
-            // หา index ของผู้เล่นใน array หลักแล้วอัปเดต
-            players = players.map(p => {
-                // ถ้าเป็นผู้ชนะ
-                if (winners.some(w => w.id === p.id)) {
-                    return { 
-                        ...p, 
-                        matches: p.matches + 1, 
-                        wins: p.wins + 1, 
-                        score: p.score + 20 // ชนะได้ 20 แต้ม
-                    };
-                }
-                // ถ้าเป็นผู้แพ้
-                if (losers.some(l => l.id === p.id)) {
-                    return { 
-                        ...p, 
-                        matches: p.matches + 1, 
-                        score: Math.max(0, p.score + 5) // แพ้ได้ 5 แต้มปลอบใจ (ไม่ติดลบ)
-                    };
-                }
-                return p;
+            winners.forEach(p => {
+                const pRef = doc(db, "players", p.id);
+                // ดึงค่าล่าสุดก่อนบวก (Best practice) แต่ง่ายๆ คือบวกเลย
+                // หาค่าปัจจุบันจาก local list
+                const curr = playersList.find(x => x.id === p.id);
+                if(curr) updatePromises.push(updateDoc(pRef, { 
+                    score: curr.score + 20, 
+                    matches: curr.matches + 1,
+                    wins: curr.wins + 1
+                }));
             });
 
-            currentMatch = null;
-            document.getElementById('courtSection').classList.add('hidden');
-            sortPlayers();
-            saveData(); // บันทึกอัตโนมัติ
+            losers.forEach(p => {
+                const pRef = doc(db, "players", p.id);
+                const curr = playersList.find(x => x.id === p.id);
+                if(curr) updatePromises.push(updateDoc(pRef, { 
+                    score: Math.max(0, curr.score + 5), 
+                    matches: curr.matches + 1
+                }));
+            });
+
+            await Promise.all(updatePromises);
+
+            // Clear Match
+            await setDoc(matchRef, { active: false });
         }
 
-        function sortPlayers() {
-            // เรียงตาม Score เป็นหลัก
-            players.sort((a, b) => b.score - a.score);
-        }
+        // Bind Finish Buttons
+        document.getElementById('btnWinA').onclick = () => finishMatch('A');
+        document.getElementById('btnWinB').onclick = () => finishMatch('B');
+        
+        document.getElementById('cancelBtn').onclick = async () => {
+             if(confirm('ยกเลิกเกมนี้?')) await setDoc(matchRef, { active: false });
+        };
 
-        // --- 5. Render UI ---
-        function renderPlayers() {
-            const list = document.getElementById('playerList');
+        // Render UI
+        function renderList() {
+            const list = document.getElementById('listContainer');
+            document.getElementById('playerCount').innerText = playersList.length;
             list.innerHTML = '';
 
-            players.forEach((p, index) => {
-                const rank = getRank(p.score);
-                const winRate = p.matches > 0 ? Math.round((p.wins / p.matches) * 100) : 0;
+            playersList.forEach((p, idx) => {
+                const winRate = p.matches ? Math.round((p.wins/p.matches)*100) : 0;
+                const isTop = idx < 3;
                 
                 list.innerHTML += `
-                    <div class="bg-white p-3 rounded-lg shadow-sm border border-slate-100 flex items-center justify-between ${rank.class.includes('legend') ? 'ring-2 ring-purple-200' : ''}">
+                    <div class="flex justify-between items-center bg-white p-3 rounded border ${isTop ? 'border-orange-200 bg-orange-50/30' : 'border-slate-100'}">
                         <div class="flex items-center gap-3">
-                            <div class="text-slate-400 font-bold w-4 text-center">${index + 1}</div>
+                            <div class="font-bold text-slate-300 w-4 text-center">${idx+1}</div>
                             <div>
-                                <div class="font-bold text-slate-800 text-lg">${p.name}</div>
-                                <div class="text-xs border px-1.5 py-0.5 rounded inline-block font-semibold ${rank.class}">
-                                    ${rank.name}
-                                </div>
-                                <span class="text-xs text-slate-400 ml-1">Score: ${p.score}</span>
+                                <div class="font-bold text-slate-700">${p.name}</div>
+                                <div class="text-[10px] text-slate-400">แข่ง ${p.matches}</div>
                             </div>
                         </div>
                         <div class="text-right">
-                            <div class="text-xs text-slate-500">แข่ง ${p.matches} | ชนะ ${p.wins}</div>
-                            <div class="text-xs font-bold ${winRate >= 50 ? 'text-green-500' : 'text-orange-500'}">Win ${winRate}%</div>
+                            <div class="font-bold text-indigo-600">${p.score}</div>
+                            <div class="text-[10px] ${winRate >= 50 ? 'text-green-500' : 'text-slate-400'}">${winRate}% Win</div>
                         </div>
-                        <button onclick="deletePlayer(${p.id})" class="ml-2 text-slate-200 hover:text-red-400">×</button>
                     </div>
                 `;
             });
+        }
+
+        function renderMatch(data) {
+            document.getElementById('matchSection').classList.remove('hidden');
+            document.getElementById('btnGenerate').classList.add('hidden');
+            
+            document.getElementById('nameA1').innerText = data.teamA[0].name;
+            document.getElementById('nameA2').innerText = data.teamA[1].name;
+            document.getElementById('nameB1').innerText = data.teamB[0].name;
+            document.getElementById('nameB2').innerText = data.teamB[1].name;
+        }
+
+        function hideMatch() {
+            document.getElementById('matchSection').classList.add('hidden');
+            document.getElementById('btnGenerate').classList.remove('hidden');
         }
     </script>
 </body>
