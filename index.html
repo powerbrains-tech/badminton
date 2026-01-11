@@ -20,11 +20,6 @@
         .admin-only { display: none !important; } 
         .show-admin .admin-only { display: block !important; }
         .show-admin .admin-flex { display: flex !important; }
-
-        /* Score Badge Changes */
-        .score-up { color: #16a34a; }
-        .score-down { color: #dc2626; }
-        .score-draw { color: #d97706; }
     </style>
 </head>
 <body class="p-4 max-w-2xl mx-auto pb-40">
@@ -81,7 +76,6 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js";
         import { getFirestore, collection, addDoc, onSnapshot, doc, updateDoc, deleteDoc, setDoc, writeBatch, query, where, orderBy, limit } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore.js";
 
-        // ------------------------------------------------------------------
         // 🔴🔴 Config เดิมของคุณ 🔴🔴
         const firebaseConfig = {
             apiKey: "AIzaSyC6VSnH2H5zyFPbya0axgP38WiGczYU-oU",
@@ -92,21 +86,17 @@
             appId: "1:518167738562:web:8ba84a7c1a350d16e3e35b",
             measurementId: "G-6X20YG49K9"
         };
-        // ------------------------------------------------------------------
 
-        // ==========================================
-        // ⚙️ ตั้งค่าคะแนนตรงนี้ (Game Rules)
-        // ==========================================
-        const SCORE_WIN = 20;    // คะแนนเมื่อชนะ
-        const SCORE_DRAW = 5;    // คะแนนเมื่อเสมอ
-        const SCORE_LOSS = -10;  // คะแนนเมื่อแพ้ (ติดลบ)
-        // ==========================================
+        // ⚙️ Game Rules
+        const SCORE_WIN = 20;
+        const SCORE_DRAW = 5;
+        const SCORE_LOSS = -10;
 
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
         
         const playersRef = collection(db, "players");
-        const historyRef = collection(db, "match_history_v2"); // ใช้ Collection ใหม่เพื่อรองรับ Data แบบใหม่
+        const historyRef = collection(db, "match_history_v2");
         const systemRef = doc(db, "system", "courts_state");
 
         let playersList = [];
@@ -136,12 +126,9 @@
             renderList();
         });
 
-        // --- Helper: Stats Calculation ---
+        // --- Helpers ---
         function calculateStats(player, filter) {
-            // All Time -> ใช้ Score ปัจจุบัน
             if (filter === 'all') return { value: player.score, label: 'MMR', displayClass: 'text-slate-800' };
-
-            // Period Filter
             const now = new Date();
             let cutoff = new Date();
             if (filter === 'day') cutoff.setHours(0,0,0,0);
@@ -166,10 +153,8 @@
                 }
             });
 
-            // Display Logic
             let label = netChange > 0 ? `+${netChange}` : `${netChange}`;
             let displayClass = netChange > 0 ? 'text-green-600' : (netChange < 0 ? 'text-red-500' : 'text-slate-400');
-
             return { value: netChange, label, displayClass, wins, draws, losses };
         }
 
@@ -182,7 +167,7 @@
             return { name: 'ROOKIE 🐣', color: 'rank-rookie', text: 'text-slate-400' };
         }
 
-        // --- Logic ---
+        // --- Actions ---
         document.getElementById('btnAdd').onclick = async () => {
             const name = document.getElementById('inputName').value.trim();
             if (!name) return;
@@ -202,6 +187,7 @@
             await batch.commit();
         }
         
+        // ✅ ปุ่มลบทำงานตรงนี้
         window.deletePlayer = async (id) => {
              if(confirm("ลบคนนี้ถาวร?")) await deleteDoc(doc(db, "players", id));
         }
@@ -227,9 +213,7 @@
                 if (pool.length < 4) break;
                 let sel = pool.slice(0, 4);
                 pool = pool.slice(4);
-                
                 sel.sort((a, b) => b.score - a.score);
-                
                 newMatches.push({
                     id: Date.now() + i,
                     courtNo: findNextCourtNo(newMatches),
@@ -246,9 +230,7 @@
             let i = 1; while(used.has(i)) i++; return i;
         }
 
-        // --- NEW: Finish Match Logic with 3 Outcomes ---
         window.finishMatch = async (matchId, result) => {
-            // result: 'A_WIN' | 'B_WIN' | 'DRAW'
             const msg = result === 'DRAW' ? 'ยืนยันผล เสมอ?' : `ยืนยันทีม ${result === 'A_WIN' ? 'A' : 'B'} ชนะ?`;
             if (!confirm(msg)) return;
 
@@ -256,49 +238,26 @@
             if (!match) return;
 
             const batch = writeBatch(db);
+            let changeA = 0, changeB = 0;
 
-            // Determine Points Change
-            let changeA = 0;
-            let changeB = 0;
+            if (result === 'A_WIN') { changeA = SCORE_WIN; changeB = SCORE_LOSS; }
+            else if (result === 'B_WIN') { changeA = SCORE_LOSS; changeB = SCORE_WIN; }
+            else { changeA = SCORE_DRAW; changeB = SCORE_DRAW; }
 
-            if (result === 'A_WIN') {
-                changeA = SCORE_WIN;
-                changeB = SCORE_LOSS;
-            } else if (result === 'B_WIN') {
-                changeA = SCORE_LOSS;
-                changeB = SCORE_WIN;
-            } else { // DRAW
-                changeA = SCORE_DRAW;
-                changeB = SCORE_DRAW;
-            }
-
-            // Update Team A Players
-            match.teamA.forEach(p => {
+            [...match.teamA, ...match.teamB].forEach(p => {
+                const isA = match.teamA.some(x => x.id === p.id);
+                const change = isA ? changeA : changeB;
                 const ref = doc(db, "players", p.id);
                 const curr = playersList.find(x => x.id === p.id);
                 if(curr) {
-                    const newScore = Math.max(0, curr.score + changeA); // No negative score
-                    const wins = curr.wins + (result === 'A_WIN' ? 1 : 0);
+                    const newScore = Math.max(0, curr.score + change);
+                    const wins = curr.wins + ((isA && result==='A_WIN') || (!isA && result==='B_WIN') ? 1 : 0);
                     const draws = (curr.draws || 0) + (result === 'DRAW' ? 1 : 0);
-                    const losses = (curr.losses || 0) + (changeA < 0 ? 1 : 0);
+                    const losses = (curr.losses || 0) + (change < 0 ? 1 : 0);
                     batch.update(ref, { score: newScore, matches: curr.matches + 1, wins, draws, losses });
                 }
             });
 
-            // Update Team B Players
-            match.teamB.forEach(p => {
-                const ref = doc(db, "players", p.id);
-                const curr = playersList.find(x => x.id === p.id);
-                if(curr) {
-                    const newScore = Math.max(0, curr.score + changeB); // No negative score
-                    const wins = curr.wins + (result === 'B_WIN' ? 1 : 0);
-                    const draws = (curr.draws || 0) + (result === 'DRAW' ? 1 : 0);
-                    const losses = (curr.losses || 0) + (changeB < 0 ? 1 : 0);
-                    batch.update(ref, { score: newScore, matches: curr.matches + 1, wins, draws, losses });
-                }
-            });
-
-            // Save Advanced History
             const historyDoc = doc(historyRef);
             batch.set(historyDoc, {
                 timestamp: Date.now(),
@@ -309,10 +268,8 @@
                 change_B: changeB
             });
 
-            // Clear Court
             const remaining = activeMatches.filter(m => m.id !== matchId);
             batch.set(systemRef, { matches: remaining });
-
             await batch.commit();
         };
 
@@ -334,106 +291,10 @@
             renderList();
         }
 
-        // --- Render ---
         function renderCourts() {
             const container = document.getElementById('courtsContainer');
             container.innerHTML = '';
             activeMatches.sort((a, b) => a.courtNo - b.courtNo);
 
             if (activeMatches.length === 0) {
-                container.innerHTML = `<div class="text-center text-slate-400 py-6 col-span-full border-2 border-dashed border-slate-200 rounded-xl">สนามว่าง...</div>`;
-                return;
-            }
-
-            activeMatches.forEach(m => {
-                container.innerHTML += `
-                    <div class="rounded-xl p-1 shadow-lg text-white bg-gradient-to-br from-slate-700 to-slate-800 court-card relative">
-                        <div class="absolute top-2 left-2 bg-white/20 px-2 rounded text-xs font-bold">Court ${m.courtNo}</div>
-                        <button onclick="cancelMatch(${m.id})" class="absolute top-2 right-2 text-white/50 hover:text-white text-xs admin-only">✖</button>
-                        
-                        <div class="bg-white rounded-lg p-3 text-slate-800 mt-8">
-                            <div class="flex justify-between items-center mb-1 p-1 rounded hover:bg-indigo-50 border-l-4 border-indigo-500">
-                                <div class="text-sm font-bold leading-tight pl-2">${m.teamA[0].name}<br>${m.teamA[1].name}</div>
-                                <button onclick="finishMatch(${m.id}, 'A_WIN')" class="admin-only bg-indigo-100 text-indigo-700 px-3 py-1 rounded-full text-xs font-bold hover:bg-indigo-200">A ชนะ</button>
-                            </div>
-                            
-                            <div class="flex justify-center my-1">
-                                <button onclick="finishMatch(${m.id}, 'DRAW')" class="admin-only bg-slate-100 text-slate-500 px-4 py-0.5 rounded-full text-[10px] font-bold hover:bg-slate-200 border border-slate-300">เสมอ</button>
-                            </div>
-
-                            <div class="flex justify-between items-center mt-1 p-1 rounded hover:bg-orange-50 border-l-4 border-orange-500">
-                                <div class="text-sm font-bold leading-tight pl-2">${m.teamB[0].name}<br>${m.teamB[1].name}</div>
-                                <button onclick="finishMatch(${m.id}, 'B_WIN')" class="admin-only bg-orange-100 text-orange-700 px-3 py-1 rounded-full text-xs font-bold hover:bg-orange-200">B ชนะ</button>
-                            </div>
-                        </div>
-                    </div>
-                `;
-            });
-        }
-
-        function renderList() {
-            const list = document.getElementById('listContainer');
-            list.innerHTML = '';
-            
-            let displayList = playersList.map(p => {
-                const stats = calculateStats(p, currentFilter);
-                return { ...p, ...stats };
-            });
-
-            // Sort logic
-            displayList.sort((a, b) => b.value - a.value);
-
-            const playingIds = new Set();
-            activeMatches.forEach(m => { m.teamA.forEach(p => playingIds.add(p.id)); m.teamB.forEach(p => playingIds.add(p.id)); });
-
-            displayList.forEach((p, idx) => {
-                if (currentFilter !== 'all' && p.value === 0) return; // Hide inactivity in period view
-
-                const rankInfo = getRankTier(p.score);
-                const isPlaying = playingIds.has(p.id);
-
-                list.innerHTML += `
-                    <div class="flex justify-between items-center p-3 rounded-lg border border-slate-100 mb-2 ${rankInfo.color} ${!p.isPresent ? 'opacity-50 bg-slate-50 grayscale' : 'bg-white'} relative">
-                        <div class="flex items-center gap-3">
-                            <div class="admin-only">
-                                <input type="checkbox" ${p.isPresent ? 'checked' : ''} onchange="togglePresence('${p.id}', ${p.isPresent})" class="w-4 h-4 rounded text-indigo-600 cursor-pointer">
-                            </div>
-                            <div class="font-bold text-slate-400 w-5 text-center text-sm">${idx+1}</div>
-                            <div>
-                                <div class="font-bold text-slate-700 flex items-center gap-2">
-                                    ${p.name}
-                                    ${isPlaying ? '<span class="text-[8px] bg-indigo-500 text-white px-1.5 rounded animate-pulse">PLAYING</span>' : ''}
-                                </div>
-                                <div class="text-[10px] ${rankInfo.text} font-bold tracking-wide flex gap-2">
-                                    ${rankInfo.name} 
-                                    <span class="text-slate-400 font-normal">| W:${p.wins || 0} D:${p.draws || 0} L:${p.losses || 0}</span>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="text-right">
-                            <div class="font-bold text-lg ${p.displayClass}">${p.label}</div>
-                            <div class="text-[10px] text-slate-400">แข่ง ${p.matches}</div>
-                        </div>
-                    </div>
-                `;
-            });
-
-            if(list.innerHTML === '') list.innerHTML = `<div class="text-center text-sm text-slate-400 py-4">ยังไม่มีข้อมูล...</div>`;
-        }
-
-        window.toggleAdmin = function() {
-            const pass = prompt("Admin Password:");
-            if (pass === "1234") { 
-                document.body.classList.toggle('show-admin');
-                const panel = document.getElementById('adminPanel');
-                const addBox = document.getElementById('addPlayerBox');
-                if(panel.classList.contains('hidden')) {
-                    panel.classList.remove('hidden'); addBox.classList.remove('hidden');
-                } else {
-                    panel.classList.add('hidden'); addBox.classList.add('hidden');
-                }
-            }
-        }
-    </script>
-</body>
-</html>
+                container.innerHTML = `<div class="text-center text-slate-400 py-6 col-span-full border-2 border-dashed border-slate-200 rounded-xl">สนามว่าง...
