@@ -3,59 +3,70 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Badminton Real-time ⚡</title>
+    <title>Badminton Live Score 🏸</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;600&display=swap" rel="stylesheet">
     <style>
         body { font-family: 'Kanit', sans-serif; background-color: #f8fafc; }
-        .rank-novice { background-color: #f1f5f9; color: #64748b; }
         .rank-gold { background: linear-gradient(135deg, #fcd34d 0%, #f59e0b 100%); color: white; }
         .court-active { animation: pulse 2s infinite; }
         @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(79, 70, 229, 0.4); } 70% { box-shadow: 0 0 0 10px rgba(79, 70, 229, 0); } 100% { box-shadow: 0 0 0 0 rgba(79, 70, 229, 0); } }
+        /* ซ่อนปุ่มแอดมินโดย default */
+        .admin-only { display: none !important; } 
+        .show-admin .admin-only { display: block !important; }
+        .show-admin .admin-flex { display: flex !important; }
     </style>
 </head>
 <body class="p-4 max-w-md mx-auto pb-20">
 
     <div class="flex justify-between items-center mb-6">
         <h1 class="text-2xl font-bold text-slate-800">🏸 Badminton <span class="text-indigo-600 text-sm align-top">Live</span></h1>
-        <div id="statusIndicator" class="text-xs px-2 py-1 rounded bg-gray-200 text-gray-500">Connecting...</div>
+        <div class="flex items-center gap-2">
+            <div id="statusIndicator" class="text-[10px] px-2 py-1 rounded bg-gray-200 text-gray-500">...</div>
+            <button onclick="toggleAdmin()" class="text-xl hover:scale-110 transition">🔒</button>
+        </div>
     </div>
 
     <div id="matchSection" class="hidden mb-6">
         <div class="bg-indigo-600 rounded-xl p-1 shadow-lg court-active relative">
              <div class="text-center text-white text-xs font-bold py-1">LIVE MATCH 🔴</div>
-             <button id="cancelBtn" class="absolute top-1 right-2 text-white/50 text-xs hover:text-white">ยกเลิก</button>
+             
+             <button id="cancelBtn" class="admin-only absolute top-1 right-2 text-white/50 text-xs hover:text-white bg-black/20 px-2 rounded">ยกเลิก</button>
              
              <div class="bg-white rounded-lg p-4">
-                 <div class="flex justify-between items-center mb-2 p-2 rounded hover:bg-indigo-50 cursor-pointer border border-transparent hover:border-indigo-100" id="btnWinA">
+                 <div class="flex justify-between items-center mb-2 p-2 rounded border border-transparent hover:border-indigo-100 transition" id="teamABox">
                      <div class="text-left">
                          <div class="font-bold text-lg text-slate-800" id="nameA1">...</div>
                          <div class="font-bold text-lg text-slate-800" id="nameA2">...</div>
                      </div>
-                     <div class="bg-indigo-100 text-indigo-700 px-3 py-1 rounded-full text-xs font-bold">กดชนะ</div>
+                     <button id="btnWinA" class="admin-only bg-indigo-100 text-indigo-700 px-3 py-1 rounded-full text-xs font-bold hover:bg-indigo-200">
+                        กดชนะ
+                     </button>
                  </div>
 
                  <div class="text-center text-xs text-slate-300 my-1">- VS -</div>
 
-                 <div class="flex justify-between items-center mt-2 p-2 rounded hover:bg-orange-50 cursor-pointer border border-transparent hover:border-orange-100" id="btnWinB">
+                 <div class="flex justify-between items-center mt-2 p-2 rounded border border-transparent hover:border-orange-100 transition" id="teamBBox">
                      <div class="text-left">
                          <div class="font-bold text-lg text-slate-800" id="nameB1">...</div>
                          <div class="font-bold text-lg text-slate-800" id="nameB2">...</div>
                      </div>
-                     <div class="bg-orange-100 text-orange-700 px-3 py-1 rounded-full text-xs font-bold">กดชนะ</div>
+                     <button id="btnWinB" class="admin-only bg-orange-100 text-orange-700 px-3 py-1 rounded-full text-xs font-bold hover:bg-orange-200">
+                        กดชนะ
+                     </button>
                  </div>
              </div>
         </div>
     </div>
 
-    <div class="mb-6">
+    <div class="mb-6 admin-only">
         <button id="btnGenerate" class="w-full bg-slate-800 text-white py-3 rounded-xl font-bold shadow hover:bg-slate-900 active:scale-95 transition hidden">
             🎲 จับคู่เล่นรอบต่อไป
         </button>
     </div>
 
     <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-4">
-        <div class="flex gap-2 mb-4">
+        <div class="gap-2 mb-4 admin-only hidden" id="addPlayerBox">
             <input type="text" id="inputName" placeholder="ชื่อเล่น..." class="flex-1 bg-slate-50 border rounded px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-indigo-500">
             <button id="btnAdd" class="bg-indigo-600 text-white px-4 rounded font-bold hover:bg-indigo-700">+</button>
         </div>
@@ -72,9 +83,7 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js";
         import { getFirestore, collection, addDoc, onSnapshot, doc, updateDoc, deleteDoc, setDoc } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore.js";
 
-        // ------------------------------------------------------------------
-        // ✅ แก้ไข config ให้ถูกต้องแล้วครับ
-        // ------------------------------------------------------------------
+        // CONFIG (ใส่รหัสเดิมของคุณ)
         const firebaseConfig = {
             apiKey: "AIzaSyC6VSnH2H5zyFPbya0axgP38WiGczYU-oU",
             authDomain: "badminton-smasher-ai.firebaseapp.com",
@@ -84,151 +93,116 @@
             appId: "1:518167738562:web:8ba84a7c1a350d16e3e35b",
             measurementId: "G-6X20YG49K9"
         };
-        // ------------------------------------------------------------------
 
-        // Initialize Firebase
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
-        const statusDiv = document.getElementById('statusIndicator');
+        
+        // --- ADMIN SYSTEM ---
+        window.toggleAdmin = function() {
+            const body = document.body;
+            if (body.classList.contains('show-admin')) {
+                // Logout
+                body.classList.remove('show-admin');
+                alert('ออกจากโหมดแอดมินแล้ว');
+            } else {
+                // Login
+                const pass = prompt("ใส่รหัสคนจัดก๊วน (Admin Password):");
+                if (pass === "1234") { // <--- แก้รหัสผ่านตรงนี้ได้ครับ
+                    body.classList.add('show-admin');
+                    document.getElementById('addPlayerBox').classList.remove('hidden');
+                    document.getElementById('addPlayerBox').classList.add('flex');
+                } else if (pass !== null) {
+                    alert("รหัสผิดครับ!");
+                }
+            }
+        }
+        // ---------------------
 
-        // References
+        const statusDiv = document.getElementById('statusIndicator');
         const playersRef = collection(db, "players");
         const matchRef = doc(db, "system", "current_match");
-
         let playersList = [];
         let currentMatchData = null;
 
-        // 1. Real-time Listener: Players
+        // Listener: Players
         onSnapshot(playersRef, (snapshot) => {
             statusDiv.innerText = "Online 🟢";
-            statusDiv.className = "text-xs px-2 py-1 rounded bg-green-100 text-green-700";
-            
+            statusDiv.className = "text-[10px] px-2 py-1 rounded bg-green-100 text-green-700";
             playersList = [];
-            snapshot.forEach(doc => {
-                playersList.push({ id: doc.id, ...doc.data() });
-            });
-
-            // Sort logic: Score มากสุดขึ้นก่อน
+            snapshot.forEach(doc => playersList.push({ id: doc.id, ...doc.data() }));
             playersList.sort((a, b) => b.score - a.score);
             renderList();
         });
 
-        // 2. Real-time Listener: Match
+        // Listener: Match
         onSnapshot(matchRef, (docSnap) => {
             if (docSnap.exists()) {
                 currentMatchData = docSnap.data();
-                if(currentMatchData.active) {
-                    renderMatch(currentMatchData);
-                } else {
-                    hideMatch();
-                }
-            } else {
-                hideMatch();
-            }
+                if(currentMatchData.active) renderMatch(currentMatchData);
+                else hideMatch();
+            } else hideMatch();
         });
-
-        // --- Functions ---
 
         // Add Player
         document.getElementById('btnAdd').onclick = async () => {
             const name = document.getElementById('inputName').value.trim();
             if (!name) return;
-            
-            // Check duplicate name local check (for speed)
             if(playersList.some(p => p.name == name)) { alert('ชื่อซ้ำ!'); return; }
-
-            await addDoc(playersRef, {
-                name: name,
-                score: 1000,
-                matches: 0,
-                wins: 0,
-                createdAt: Date.now()
-            });
+            await addDoc(playersRef, { name: name, score: 1000, matches: 0, wins: 0, createdAt: Date.now() });
             document.getElementById('inputName').value = '';
         };
+
+        // Delete Player
+        window.deletePlayer = async (id) => {
+            if(confirm("ลบชื่อนี้ออก?")) await deleteDoc(doc(db, "players", id));
+        }
 
         // Generate Match
         document.getElementById('btnGenerate').onclick = async () => {
             if (playersList.length < 4) return alert('คนไม่พอ (ต้อง 4 คน)');
-            
-            // Logic จัดทีม (เหมือนเดิม)
-            // 1. หา 4 คนที่ match น้อยสุด
             let pool = [...playersList].sort((a, b) => a.matches - b.matches || 0.5 - Math.random());
             let selected = pool.slice(0, 4);
-            
-            // 2. เรียงตามความเก่งเพื่อแบ่งข้าง
             selected.sort((a, b) => b.score - a.score);
-            
-            // Team A: #1 & #4, Team B: #2 & #3
-            const matchData = {
+            await setDoc(matchRef, {
                 active: true,
                 teamA: [selected[0], selected[3]],
                 teamB: [selected[1], selected[2]]
-            };
-
-            // Save to Firebase (Everyone will see this update immediately)
-            await setDoc(matchRef, matchData);
+            });
         };
 
         // Finish Match
         async function finishMatch(winnerTeam) {
             if (!currentMatchData || !currentMatchData.active) return;
             if (!confirm(`ยืนยันทีม ${winnerTeam} ชนะ?`)) return;
-
             const winners = winnerTeam === 'A' ? currentMatchData.teamA : currentMatchData.teamB;
             const losers = winnerTeam === 'A' ? currentMatchData.teamB : currentMatchData.teamA;
-
-            // Update scores in Firebase
-            // ต้องวนลูปอัปเดตทีละคน
             const updatePromises = [];
 
             winners.forEach(p => {
-                const pRef = doc(db, "players", p.id);
-                // ดึงค่าล่าสุดก่อนบวก (Best practice) แต่ง่ายๆ คือบวกเลย
-                // หาค่าปัจจุบันจาก local list
                 const curr = playersList.find(x => x.id === p.id);
-                if(curr) updatePromises.push(updateDoc(pRef, { 
-                    score: curr.score + 20, 
-                    matches: curr.matches + 1,
-                    wins: curr.wins + 1
-                }));
+                if(curr) updatePromises.push(updateDoc(doc(db, "players", p.id), { score: curr.score + 20, matches: curr.matches + 1, wins: curr.wins + 1 }));
             });
-
             losers.forEach(p => {
-                const pRef = doc(db, "players", p.id);
                 const curr = playersList.find(x => x.id === p.id);
-                if(curr) updatePromises.push(updateDoc(pRef, { 
-                    score: Math.max(0, curr.score + 5), 
-                    matches: curr.matches + 1
-                }));
+                if(curr) updatePromises.push(updateDoc(doc(db, "players", p.id), { score: Math.max(0, curr.score + 5), matches: curr.matches + 1 }));
             });
 
             await Promise.all(updatePromises);
-
-            // Clear Match
             await setDoc(matchRef, { active: false });
         }
 
-        // Bind Finish Buttons
         document.getElementById('btnWinA').onclick = () => finishMatch('A');
         document.getElementById('btnWinB').onclick = () => finishMatch('B');
-        
-        document.getElementById('cancelBtn').onclick = async () => {
-             if(confirm('ยกเลิกเกมนี้?')) await setDoc(matchRef, { active: false });
-        };
+        document.getElementById('cancelBtn').onclick = async () => { if(confirm('ยกเลิก?')) await setDoc(matchRef, { active: false }); };
 
-        // Render UI
         function renderList() {
             const list = document.getElementById('listContainer');
             document.getElementById('playerCount').innerText = playersList.length;
             list.innerHTML = '';
-
             playersList.forEach((p, idx) => {
                 const winRate = p.matches ? Math.round((p.wins/p.matches)*100) : 0;
-                const isTop = idx < 3;
-                
                 list.innerHTML += `
-                    <div class="flex justify-between items-center bg-white p-3 rounded border ${isTop ? 'border-orange-200 bg-orange-50/30' : 'border-slate-100'}">
+                    <div class="flex justify-between items-center bg-white p-3 rounded border border-slate-100">
                         <div class="flex items-center gap-3">
                             <div class="font-bold text-slate-300 w-4 text-center">${idx+1}</div>
                             <div>
@@ -236,9 +210,12 @@
                                 <div class="text-[10px] text-slate-400">แข่ง ${p.matches}</div>
                             </div>
                         </div>
-                        <div class="text-right">
-                            <div class="font-bold text-indigo-600">${p.score}</div>
-                            <div class="text-[10px] ${winRate >= 50 ? 'text-green-500' : 'text-slate-400'}">${winRate}% Win</div>
+                        <div class="flex items-center gap-3">
+                            <div class="text-right">
+                                <div class="font-bold text-indigo-600">${p.score}</div>
+                                <div class="text-[10px] text-slate-400">${winRate}% Win</div>
+                            </div>
+                            <button onclick="deletePlayer('${p.id}')" class="admin-only text-red-300 hover:text-red-500 ml-2">×</button>
                         </div>
                     </div>
                 `;
@@ -248,7 +225,6 @@
         function renderMatch(data) {
             document.getElementById('matchSection').classList.remove('hidden');
             document.getElementById('btnGenerate').classList.add('hidden');
-            
             document.getElementById('nameA1').innerText = data.teamA[0].name;
             document.getElementById('nameA2').innerText = data.teamA[1].name;
             document.getElementById('nameB1').innerText = data.teamB[0].name;
