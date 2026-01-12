@@ -22,7 +22,6 @@
         .admin-only { display: none !important; } 
         .show-admin .admin-only { display: block !important; }
         
-        /* Modal & Animations */
         .modal { transition: opacity 0.2s ease; }
         body.modal-active { overflow: hidden !important; }
         .selected-player { background-color: #4f46e5 !important; color: white !important; border-color: #4f46e5 !important; transform: scale(0.98); }
@@ -42,6 +41,7 @@
             </button>
         </div>
         <div class="flex gap-2">
+            <button onclick="openCalculator()" class="text-xl p-2 bg-white text-emerald-600 shadow rounded-full hover:scale-110 transition border border-emerald-100">💰</button>
             <div id="statusIndicator" class="hidden text-[10px] px-2 py-1 rounded bg-gray-200 text-gray-500">...</div>
             <button onclick="toggleAdmin()" class="text-xl p-2 bg-white shadow rounded-full hover:scale-110 transition">🔒</button>
         </div>
@@ -101,12 +101,10 @@
     <div id="manualModal" class="modal opacity-0 pointer-events-none fixed w-full h-full top-0 left-0 flex items-center justify-center z-50">
         <div class="absolute w-full h-full bg-gray-900 opacity-80" onclick="closeManualModal()"></div>
         <div class="bg-white w-11/12 max-w-lg max-h-[90vh] rounded-xl shadow-2xl z-50 flex flex-col overflow-hidden relative">
-            
             <div class="p-4 border-b flex justify-between items-center bg-slate-50 flex-none">
-                <h3 class="text-lg font-bold text-slate-800">👆 จิ้มเลือกเอง (4 คน)</h3>
+                <h3 class="text-lg font-bold text-slate-800">👆 จิ้มเลือกเอง</h3>
                 <button onclick="closeManualModal()" class="text-slate-400 hover:text-red-500 text-2xl leading-none">&times;</button>
             </div>
-
             <div class="p-3 bg-slate-100 flex gap-2 justify-center items-center shadow-inner flex-none">
                 <div class="flex flex-col gap-2 w-1/2">
                     <div class="bg-indigo-100 border-2 border-indigo-300 rounded p-1 text-center text-[10px] font-bold text-indigo-700 min-h-[35px] flex items-center justify-center" id="slot-0">A1...</div>
@@ -118,16 +116,85 @@
                     <div class="bg-orange-100 border-2 border-orange-300 rounded p-1 text-center text-[10px] font-bold text-orange-700 min-h-[35px] flex items-center justify-center" id="slot-3">B2...</div>
                 </div>
             </div>
-
             <div class="flex-1 overflow-y-auto p-4 bg-slate-50 min-h-0">
                 <p class="text-xs text-slate-400 mb-2 text-center">แตะรายชื่อด้านล่างเพื่อเลือก</p>
                 <div id="manualList" class="space-y-2"></div>
             </div>
-
             <div class="p-4 border-t bg-white flex-none">
-                <button id="btnConfirmManual" onclick="confirmManualMatch()" disabled class="w-full bg-slate-300 text-white py-3 rounded-xl font-bold shadow transition">
-                    คนยังไม่ครบ (0/4)
-                </button>
+                <button id="btnConfirmManual" onclick="confirmManualMatch()" disabled class="w-full bg-slate-300 text-white py-3 rounded-xl font-bold shadow transition">คนยังไม่ครบ (0/4)</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="calcModal" class="modal opacity-0 pointer-events-none fixed w-full h-full top-0 left-0 flex items-center justify-center z-50">
+        <div class="absolute w-full h-full bg-gray-900 opacity-60" onclick="closeCalculator()"></div>
+        <div class="bg-white w-11/12 md:max-w-sm mx-auto rounded-xl shadow-2xl z-50 p-6 relative">
+            <div class="flex justify-between items-center mb-4"><h3 class="text-xl font-bold text-emerald-700">💰 หารค่าคอร์ท</h3><div onclick="closeCalculator()" class="cursor-pointer">✖</div></div>
+            
+            <div class="mb-4">
+                <label class="text-xs text-slate-500 font-bold">ยอดรวมทั้งหมด (บาท)</label>
+                <input type="number" id="calcTotal" class="w-full border-2 border-emerald-100 rounded-lg px-3 py-2 text-lg font-bold text-emerald-700 focus:outline-none focus:border-emerald-500" placeholder="0.00" oninput="calculateShare()">
+            </div>
+
+            <div class="mb-4 bg-emerald-50 rounded-lg p-3 border border-emerald-100">
+                <div class="flex justify-between text-sm text-slate-600 mb-1">
+                    <span>จำนวนคน (ที่เช็คชื่อ):</span>
+                    <span class="font-bold" id="calcCount">0</span>
+                </div>
+                <div class="border-t border-emerald-200 my-2"></div>
+                <div class="flex justify-between items-center">
+                    <span class="font-bold text-emerald-800">ตกคนละ:</span>
+                    <span class="text-2xl font-bold text-emerald-600" id="calcResult">0</span>
+                </div>
+            </div>
+
+            <div class="mb-2">
+                <label class="text-xs text-slate-500 font-bold">เบอร์พร้อมเพย์ (สำหรับสร้าง QR)</label>
+                <input type="text" id="promptpayNo" class="w-full border rounded px-2 py-1 text-sm mb-2" placeholder="08xxxxxxxx" oninput="generateQR()">
+                <div id="qrContainer" class="hidden flex justify-center mt-2">
+                    <img id="qrImage" src="" class="border rounded-lg shadow-sm" style="max-width: 150px;">
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="statsModal" class="modal opacity-0 pointer-events-none fixed w-full h-full top-0 left-0 flex items-center justify-center z-50">
+        <div class="absolute w-full h-full bg-gray-900 opacity-60" onclick="closePlayerStats()"></div>
+        <div class="bg-white w-11/12 md:max-w-sm mx-auto rounded-xl shadow-2xl z-50 p-5 relative overflow-hidden">
+            <div class="absolute top-0 left-0 w-full h-20 bg-gradient-to-r from-indigo-500 to-purple-600 z-0"></div>
+            <div class="relative z-10">
+                <div class="flex justify-end"><button onclick="closePlayerStats()" class="text-white/80 hover:text-white text-xl font-bold">&times;</button></div>
+                <div class="text-center mt-[-10px]">
+                    <div class="w-16 h-16 bg-white rounded-full mx-auto flex items-center justify-center text-3xl shadow-lg border-2 border-indigo-100" id="statsIcon">🐣</div>
+                    <h2 class="text-xl font-bold text-slate-800 mt-2" id="statsName">Player Name</h2>
+                    <p class="text-xs text-slate-500" id="statsRank">Rookie | MMR 1000</p>
+                </div>
+
+                <div class="grid grid-cols-3 gap-2 mt-4 text-center">
+                    <div class="bg-slate-50 p-2 rounded border"><div class="text-xs text-slate-400">ชนะ</div><div class="font-bold text-green-600" id="statsWin">0</div></div>
+                    <div class="bg-slate-50 p-2 rounded border"><div class="text-xs text-slate-400">เสมอ</div><div class="font-bold text-orange-500" id="statsDraw">0</div></div>
+                    <div class="bg-slate-50 p-2 rounded border"><div class="text-xs text-slate-400">แพ้</div><div class="font-bold text-red-500" id="statsLoss">0</div></div>
+                </div>
+
+                <div class="mt-4 space-y-2">
+                    <div class="bg-green-50 p-3 rounded-lg border border-green-100 flex items-center gap-3">
+                        <div class="text-2xl">🤝</div>
+                        <div class="flex-1">
+                            <div class="text-[10px] text-green-600 font-bold uppercase">Best Partner (คู่หู)</div>
+                            <div class="font-bold text-slate-700 text-sm" id="bestPartner">ไม่มีข้อมูล</div>
+                        </div>
+                        <div class="text-xs font-bold text-green-600 bg-white px-2 py-1 rounded shadow-sm" id="bestPartnerRate">-</div>
+                    </div>
+
+                    <div class="bg-red-50 p-3 rounded-lg border border-red-100 flex items-center gap-3">
+                        <div class="text-2xl">😈</div>
+                        <div class="flex-1">
+                            <div class="text-[10px] text-red-600 font-bold uppercase">Nemesis (ศัตรูตัวฉกาจ)</div>
+                            <div class="font-bold text-slate-700 text-sm" id="worstEnemy">ไม่มีข้อมูล</div>
+                        </div>
+                        <div class="text-xs font-bold text-red-600 bg-white px-2 py-1 rounded shadow-sm" id="worstEnemyRate">-</div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
@@ -189,19 +256,118 @@
         window.openIdentityModal = () => { document.getElementById('identityModal').classList.remove('opacity-0', 'pointer-events-none'); renderIdentityList(); }
         window.closeIdentityModal = () => { document.getElementById('identityModal').classList.add('opacity-0', 'pointer-events-none'); }
         
-        // --- Manual Match Logic ---
-        window.openManualModal = () => {
-            manualSelected = [];
-            updateManualSlots();
-            renderManualList();
-            document.getElementById('manualModal').classList.remove('opacity-0', 'pointer-events-none');
-            document.body.classList.add('manual-mode-active');
+        // Manual Modal
+        window.openManualModal = () => { manualSelected = []; updateManualSlots(); renderManualList(); document.getElementById('manualModal').classList.remove('opacity-0', 'pointer-events-none'); document.body.classList.add('manual-mode-active'); }
+        window.closeManualModal = () => { document.getElementById('manualModal').classList.add('opacity-0', 'pointer-events-none'); document.body.classList.remove('manual-mode-active'); }
+        
+        // Calculator Modal (NEW)
+        window.openCalculator = () => { 
+            document.getElementById('calcModal').classList.remove('opacity-0', 'pointer-events-none'); 
+            const count = playersList.filter(p => p.isPresent).length;
+            document.getElementById('calcCount').innerText = count;
+            calculateShare();
         }
-        window.closeManualModal = () => {
-            document.getElementById('manualModal').classList.add('opacity-0', 'pointer-events-none');
-            document.body.classList.remove('manual-mode-active');
+        window.closeCalculator = () => { document.getElementById('calcModal').classList.add('opacity-0', 'pointer-events-none'); }
+        window.calculateShare = () => {
+            const total = parseFloat(document.getElementById('calcTotal').value) || 0;
+            const count = parseInt(document.getElementById('calcCount').innerText) || 1;
+            const share = count > 0 ? Math.ceil(total / count) : 0; // ปัดเศษขึ้นเสมอ
+            document.getElementById('calcResult').innerText = share + " บ.";
+            generateQR();
+        }
+        window.generateQR = () => {
+            const pp = document.getElementById('promptpayNo').value.trim();
+            const amount = parseFloat(document.getElementById('calcResult').innerText) || 0;
+            if(pp.length >= 10 && amount > 0) {
+                // Using a public QR generator API (PromptPay Payload is complex, using simple text/link for now or external lib if needed)
+                // For simplicity in this single file, let's assume we just show the calculation. 
+                // Creating a real PromptPay QR requires payload generation. 
+                // Here is a placeholder for visual completeness or using a simple generator if available.
+                // Let's just hide it for now to avoid broken QR, or use a generic one.
+                // document.getElementById('qrContainer').classList.remove('hidden');
+                // document.getElementById('qrImage').src = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${pp}`;
+            }
         }
 
+        // Stats Modal (NEW)
+        window.openPlayerStats = (id) => {
+            const p = playersList.find(x => x.id === id);
+            if(!p) return;
+            
+            const rankInfo = getRankInfo(p.score);
+            document.getElementById('statsIcon').innerText = rankInfo.icon;
+            document.getElementById('statsName').innerText = p.name;
+            document.getElementById('statsRank').innerText = `${rankInfo.name} | MMR ${p.score}`;
+            document.getElementById('statsWin').innerText = p.wins || 0;
+            document.getElementById('statsDraw').innerText = p.draws || 0;
+            document.getElementById('statsLoss').innerText = p.losses || 0;
+
+            // Analyze History for Partners/Enemies
+            const partners = {};
+            const enemies = {};
+            
+            historyList.forEach(m => {
+                let myTeam = null;
+                let otherTeam = null;
+                
+                if (m.teamA_ids.includes(id)) { myTeam = m.teamA_ids; otherTeam = m.teamB_ids; }
+                else if (m.teamB_ids.includes(id)) { myTeam = m.teamB_ids; otherTeam = m.teamA_ids; }
+
+                if (myTeam) {
+                    // Partner
+                    const partnerId = myTeam.find(pid => pid !== id);
+                    if (partnerId) {
+                        if (!partners[partnerId]) partners[partnerId] = { wins: 0, total: 0 };
+                        partners[partnerId].total++;
+                        // Check result logic
+                        const isWin = (m.result_type === 'A_WIN' && m.teamA_ids.includes(id)) || (m.result_type === 'B_WIN' && m.teamB_ids.includes(id));
+                        if(isWin) partners[partnerId].wins++;
+                    }
+                    
+                    // Enemies
+                    otherTeam.forEach(eid => {
+                        if (!enemies[eid]) enemies[eid] = { wins: 0, total: 0 }; // wins here means I beat them
+                        enemies[eid].total++;
+                        const isWin = (m.result_type === 'A_WIN' && m.teamA_ids.includes(id)) || (m.result_type === 'B_WIN' && m.teamB_ids.includes(id));
+                        if(isWin) enemies[eid].wins++;
+                    });
+                }
+            });
+
+            // Find Best Partner (Min 2 games)
+            let bestP = null; let maxRate = -1;
+            Object.keys(partners).forEach(pid => {
+                const s = partners[pid];
+                if(s.total >= 2) {
+                    const rate = s.wins / s.total;
+                    if(rate > maxRate) { maxRate = rate; bestP = pid; }
+                }
+            });
+
+            // Find Worst Enemy (Min 2 games, Lowest Win Rate against)
+            let worstE = null; let minRate = 2; // > 1
+            Object.keys(enemies).forEach(eid => {
+                const s = enemies[eid];
+                if(s.total >= 2) {
+                    const rate = s.wins / s.total; // My win rate against them
+                    if(rate < minRate) { minRate = rate; worstE = eid; }
+                }
+            });
+
+            const bpName = bestP ? playersList.find(x => x.id === bestP)?.name || 'Unknown' : '-';
+            document.getElementById('bestPartner').innerText = bestP ? bpName : 'ยังเล่นไม่พอ';
+            document.getElementById('bestPartnerRate').innerText = bestP ? Math.round(maxRate*100) + '% Win' : '-';
+
+            const weName = worstE ? playersList.find(x => x.id === worstE)?.name || 'Unknown' : '-';
+            document.getElementById('worstEnemy').innerText = worstE ? weName : 'ยังเล่นไม่พอ';
+            document.getElementById('worstEnemyRate').innerText = worstE ? Math.round(minRate*100) + '% Win' : '-'; // Win rate against them
+
+            document.getElementById('statsModal').classList.remove('opacity-0', 'pointer-events-none');
+        }
+        window.closePlayerStats = () => { document.getElementById('statsModal').classList.add('opacity-0', 'pointer-events-none'); }
+
+
+        // --- Manual Logic ---
         window.toggleManualSelect = (id) => {
             const index = manualSelected.indexOf(id);
             if (index > -1) { manualSelected.splice(index, 1); } 
@@ -452,10 +618,11 @@
                 if (currentFilter !== 'all' && p.value === 0) return;
                 const rankInfo = getRankInfo(p.score);
                 const isPlaying = playingIds.has(p.id);
+                // เพิ่ม onclick="openPlayerStats" ที่นี่
                 list.innerHTML += `
-                    <div class="flex justify-between items-center p-3 rounded-lg mb-2 card-base ${rankInfo.frame} ${!p.isPresent ? 'opacity-50 grayscale border-slate-200 bg-white' : ''} relative">
+                    <div onclick="openPlayerStats('${p.id}')" class="flex justify-between items-center p-3 rounded-lg mb-2 card-base ${rankInfo.frame} ${!p.isPresent ? 'opacity-50 grayscale border-slate-200 bg-white' : ''} relative cursor-pointer hover:scale-[1.01] transition-transform">
                         <div class="flex items-center gap-3">
-                            <div class="admin-only"><input type="checkbox" ${p.isPresent ? 'checked' : ''} onchange="togglePresence('${p.id}', ${p.isPresent})" class="w-4 h-4 rounded text-indigo-600 cursor-pointer"></div>
+                            <div class="admin-only" onclick="event.stopPropagation()"><input type="checkbox" ${p.isPresent ? 'checked' : ''} onchange="togglePresence('${p.id}', ${p.isPresent})" class="w-4 h-4 rounded text-indigo-600 cursor-pointer"></div>
                             <div class="font-bold text-slate-400 w-5 text-center text-sm">${idx+1}</div>
                             <div>
                                 <div class="font-bold text-slate-700 flex items-center gap-2 text-base">
@@ -472,7 +639,7 @@
                                 <div class="font-bold text-lg ${p.displayClass}">${p.label}</div>
                                 <div class="text-[10px] text-slate-400">แข่ง ${p.matches}</div>
                             </div>
-                            <button onclick="deletePlayer('${p.id}')" class="admin-only text-slate-300 hover:text-red-500 text-xl px-1">×</button>
+                            <button onclick="event.stopPropagation(); deletePlayer('${p.id}')" class="admin-only text-slate-300 hover:text-red-500 text-xl px-1">×</button>
                         </div>
                     </div>
                 `;
