@@ -3,13 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Badminton Self-Service 🏸</title>
+    <title>Badminton Pro League 🏆</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;600&display=swap" rel="stylesheet">
     <style>
         body { font-family: 'Kanit', sans-serif; background-color: #f8fafc; }
         
-        /* Rank Colors */
+        /* Rank Colors Indicators */
         .rank-rookie { border-left: 4px solid #94a3b8; }
         .rank-bronze { border-left: 4px solid #d97706; background: linear-gradient(90deg, #fffbeb 0%, #fff 100%); }
         .rank-silver { border-left: 4px solid #64748b; background: linear-gradient(90deg, #f8fafc 0%, #fff 100%); }
@@ -24,13 +24,26 @@
         /* Modal */
         .modal { transition: opacity 0.25s ease; }
         body.modal-active { overflow-x: hidden; overflow-y: hidden !important; }
+
+        /* Rank Badge Styles for Legend */
+        .badge-rookie { background-color: #f1f5f9; color: #64748b; border: 1px solid #cbd5e1; }
+        .badge-bronze { background-color: #fffbeb; color: #d97706; border: 1px solid #fcd34d; }
+        .badge-silver { background-color: #f8fafc; color: #64748b; border: 1px solid #94a3b8; }
+        .badge-gold   { background-color: #fefce8; color: #ca8a04; border: 1px solid #fde047; }
+        .badge-diamond{ background-color: #f0f9ff; color: #0284c7; border: 1px solid #7dd3fc; }
+        .badge-master { background-color: #faf5ff; color: #9333ea; border: 1px solid #d8b4fe; }
     </style>
 </head>
 <body class="p-4 max-w-2xl mx-auto pb-40">
 
-    <div class="flex justify-between items-center mb-4 sticky top-0 bg-[#f8fafc] z-20 py-2">
+    <div class="flex justify-between items-center mb-2 sticky top-0 bg-[#f8fafc] z-20 py-2">
         <div>
-            <h1 class="text-2xl font-bold text-slate-800">🏸 Badminton <span class="text-indigo-600">Pro</span></h1>
+            <div class="flex items-center gap-2">
+                <h1 class="text-2xl font-bold text-slate-800">🏸 Badminton <span class="text-indigo-600">Pro</span></h1>
+                <button onclick="openRankInfo()" class="text-[10px] bg-indigo-50 text-indigo-600 px-2 py-1 rounded-full border border-indigo-100 hover:bg-indigo-100 font-bold flex items-center gap-1">
+                    🏆 ดูเกณฑ์คะแนน
+                </button>
+            </div>
             
             <button onclick="openIdentityModal()" id="myIdentityBtn" class="text-xs mt-1 bg-white border border-slate-200 px-2 py-1 rounded-full flex items-center gap-1 hover:bg-slate-50 transition shadow-sm">
                 <span class="w-2 h-2 rounded-full bg-slate-300" id="idStatus"></span>
@@ -84,21 +97,59 @@
     </div>
 
     <div id="identityModal" class="modal opacity-0 pointer-events-none fixed w-full h-full top-0 left-0 flex items-center justify-center z-50">
-        <div class="modal-overlay absolute w-full h-full bg-gray-900 opacity-50"></div>
-        <div class="modal-container bg-white w-11/12 md:max-w-md mx-auto rounded shadow-lg z-50 overflow-y-auto max-h-[90vh]">
+        <div class="modal-overlay absolute w-full h-full bg-gray-900 opacity-50" onclick="closeIdentityModal()"></div>
+        <div class="modal-container bg-white w-11/12 md:max-w-md mx-auto rounded-xl shadow-2xl z-50 overflow-y-auto max-h-[90vh]">
             <div class="modal-content py-4 text-left px-6">
                 <div class="flex justify-between items-center pb-3">
                     <p class="text-xl font-bold">👤 คุณคือใคร?</p>
-                    <div class="modal-close cursor-pointer z-50" onclick="closeIdentityModal()">
-                        <svg class="fill-current text-black" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 18 18"><path d="M14.53 4.53l-1.06-1.06L9 7.94 4.53 3.47 3.47 4.53 7.94 9l-4.47 4.47 1.06 1.06L9 10.06l4.47 4.47 1.06-1.06L10.06 9z"></path></svg>
+                    <div class="cursor-pointer z-50 p-2" onclick="closeIdentityModal()">✖</div>
+                </div>
+                <input type="text" id="searchIdentity" placeholder="ค้นหาชื่อ..." class="w-full border rounded-lg px-3 py-2 mb-2 text-sm bg-slate-50" onkeyup="filterIdentityList()">
+                <div id="identityList" class="space-y-1 overflow-y-auto max-h-60"></div>
+            </div>
+        </div>
+    </div>
+
+    <div id="rankModal" class="modal opacity-0 pointer-events-none fixed w-full h-full top-0 left-0 flex items-center justify-center z-50">
+        <div class="modal-overlay absolute w-full h-full bg-gray-900 opacity-60" onclick="closeRankModal()"></div>
+        <div class="modal-container bg-white w-11/12 md:max-w-sm mx-auto rounded-xl shadow-2xl z-50 animate-bounce-in">
+            <div class="modal-content py-6 text-left px-6">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-xl font-bold text-slate-800">🏆 ระดับและเกณฑ์คะแนน</h3>
+                    <div class="cursor-pointer p-2 text-slate-400 hover:text-slate-600" onclick="closeRankModal()">✖</div>
+                </div>
+                
+                <div class="space-y-3">
+                    <div class="flex items-center justify-between p-2 rounded-lg badge-master">
+                        <div class="font-bold flex items-center gap-2">🔥 GRAND MASTER</div>
+                        <div class="font-mono font-bold">2000+</div>
+                    </div>
+                    <div class="flex items-center justify-between p-2 rounded-lg badge-diamond">
+                        <div class="font-bold flex items-center gap-2">💎 DIAMOND</div>
+                        <div class="font-mono font-bold">1800 - 1999</div>
+                    </div>
+                    <div class="flex items-center justify-between p-2 rounded-lg badge-gold">
+                        <div class="font-bold flex items-center gap-2">🥇 GOLD</div>
+                        <div class="font-mono font-bold">1500 - 1799</div>
+                    </div>
+                    <div class="flex items-center justify-between p-2 rounded-lg badge-silver">
+                        <div class="font-bold flex items-center gap-2">🥈 SILVER</div>
+                        <div class="font-mono font-bold">1300 - 1499</div>
+                    </div>
+                    <div class="flex items-center justify-between p-2 rounded-lg badge-bronze">
+                        <div class="font-bold flex items-center gap-2">🥉 BRONZE</div>
+                        <div class="font-mono font-bold">1100 - 1299</div>
+                    </div>
+                    <div class="flex items-center justify-between p-2 rounded-lg badge-rookie">
+                        <div class="font-bold flex items-center gap-2">🐣 ROOKIE</div>
+                        <div class="font-mono font-bold">0 - 1099</div>
                     </div>
                 </div>
-                <p class="text-sm text-gray-500 mb-4">เลือกชื่อของคุณเพื่อให้ปุ่มลงคะแนนแสดงตอนคุณแข่ง</p>
                 
-                <input type="text" id="searchIdentity" placeholder="ค้นหาชื่อ..." class="w-full border rounded px-3 py-2 mb-2 text-sm" onkeyup="filterIdentityList()">
-                
-                <div id="identityList" class="space-y-1 overflow-y-auto max-h-60">
-                    </div>
+                <div class="mt-6 pt-4 border-t border-slate-100 text-xs text-slate-500 text-center">
+                    <p>ชนะ +20 | เสมอ +5 | แพ้ -10</p>
+                    <p class="mt-1">รีบเก็บแต้มไต่แรงค์กันเถอะ!</p>
+                </div>
             </div>
         </div>
     </div>
@@ -145,11 +196,7 @@
             playersList = [];
             snapshot.forEach(doc => playersList.push({ id: doc.id, ...doc.data() }));
             renderList();
-            
-            // Check Identity validity
-            if (myProfile && !playersList.find(p => p.id === myProfile.id)) {
-                logoutIdentity(); // ชื่อโดนลบไปแล้ว
-            }
+            if (myProfile && !playersList.find(p => p.id === myProfile.id)) logoutIdentity();
         });
 
         onSnapshot(systemRef, (docSnap) => {
@@ -165,56 +212,56 @@
             renderList();
         });
 
-        // --- Identity System ---
+        // --- Modals Logic ---
+        window.openRankInfo = () => {
+            const modal = document.getElementById('rankModal');
+            modal.classList.remove('opacity-0', 'pointer-events-none');
+            document.body.classList.add('modal-active');
+        }
+        window.closeRankInfo = () => { /* Alias */ closeRankModal(); }
+        window.closeRankModal = () => {
+            const modal = document.getElementById('rankModal');
+            modal.classList.add('opacity-0', 'pointer-events-none');
+            document.body.classList.remove('modal-active');
+        }
+
         window.openIdentityModal = () => {
             const modal = document.getElementById('identityModal');
             modal.classList.remove('opacity-0', 'pointer-events-none');
             document.body.classList.add('modal-active');
             renderIdentityList();
         }
-
         window.closeIdentityModal = () => {
             const modal = document.getElementById('identityModal');
             modal.classList.add('opacity-0', 'pointer-events-none');
             document.body.classList.remove('modal-active');
         }
 
+        // --- Identity ---
         window.renderIdentityList = () => {
             const list = document.getElementById('identityList');
             const search = document.getElementById('searchIdentity').value.toLowerCase();
             list.innerHTML = '';
             
-            // Filter players
             const filtered = playersList.filter(p => p.name.toLowerCase().includes(search));
             
             if(myProfile) {
-                list.innerHTML += `
-                    <button onclick="logoutIdentity()" class="w-full text-left px-4 py-2 text-red-500 font-bold border border-red-200 rounded hover:bg-red-50 mb-2">
-                        ออกจากระบบ (${myProfile.name})
-                    </button>
-                `;
+                list.innerHTML += `<button onclick="logoutIdentity()" class="w-full text-left px-4 py-2 text-red-500 font-bold border border-red-200 rounded hover:bg-red-50 mb-2">ออกจากระบบ (${myProfile.name})</button>`;
             }
 
             filtered.sort((a,b) => a.name.localeCompare(b.name)).forEach(p => {
                 const isActive = myProfile && myProfile.id === p.id;
-                list.innerHTML += `
-                    <button onclick="selectIdentity('${p.id}', '${p.name}')" class="w-full text-left px-4 py-3 rounded border ${isActive ? 'bg-indigo-50 border-indigo-500 text-indigo-700' : 'bg-white border-slate-100 hover:bg-slate-50'}">
-                        ${p.name} ${isActive ? '✅' : ''}
-                    </button>
-                `;
+                list.innerHTML += `<button onclick="selectIdentity('${p.id}', '${p.name}')" class="w-full text-left px-4 py-3 rounded border ${isActive ? 'bg-indigo-50 border-indigo-500 text-indigo-700' : 'bg-white border-slate-100 hover:bg-slate-50'}">${p.name} ${isActive ? '✅' : ''}</button>`;
             });
         }
-
         window.filterIdentityList = renderIdentityList;
-
         window.selectIdentity = (id, name) => {
             myProfile = { id, name };
             localStorage.setItem('badminton_user', JSON.stringify(myProfile));
             updateIdentityUI();
             closeIdentityModal();
-            renderCourts(); // Re-render to show buttons
+            renderCourts();
         }
-
         window.logoutIdentity = () => {
             myProfile = null;
             localStorage.removeItem('badminton_user');
@@ -222,7 +269,6 @@
             closeIdentityModal();
             renderCourts();
         }
-
         function updateIdentityUI() {
             const nameEl = document.getElementById('myName');
             const statusEl = document.getElementById('idStatus');
@@ -237,7 +283,7 @@
             }
         }
 
-        // --- Render Courts (Logic หัวใจสำคัญ) ---
+        // --- Render Courts ---
         function renderCourts() {
             const container = document.getElementById('courtsContainer');
             container.innerHTML = '';
@@ -249,25 +295,19 @@
             }
 
             activeMatches.forEach(m => {
-                // เช็คว่า "ฉัน" เล่นอยู่ในแมตช์นี้ไหม?
                 let amIPlaying = false;
                 if (myProfile) {
                     const allPlayers = [...m.teamA, ...m.teamB];
                     amIPlaying = allPlayers.some(p => p.id === myProfile.id);
                 }
-
-                // ปุ่มจะโชว์ก็ต่อเมื่อ: 1. เป็น Admin หรือ 2. เป็นคนแข่งในแมตช์นั้น
                 const showControls = isAdminMode || amIPlaying;
-                const controlClass = showControls ? '' : 'hidden'; // ใช้ hidden ซ่อนถ้าไม่มีสิทธิ์
-
-                // Special UI for user playing
+                const controlClass = showControls ? '' : 'hidden';
                 const borderClass = amIPlaying ? 'ring-4 ring-yellow-400' : '';
 
                 container.innerHTML += `
                     <div class="rounded-xl p-1 shadow-lg text-white bg-gradient-to-br from-slate-700 to-slate-800 court-card relative ${borderClass}">
                         <div class="absolute top-2 left-2 bg-white/20 px-2 rounded text-xs font-bold">Court ${m.courtNo}</div>
                         ${amIPlaying ? '<div class="absolute top-2 right-12 bg-yellow-400 text-black px-2 rounded text-[10px] font-bold animate-pulse">คิวคุณ!</div>' : ''}
-                        
                         <button onclick="cancelMatch(${m.id})" class="absolute top-2 right-2 text-white/50 hover:text-white text-xs admin-only">✖</button>
                         
                         <div class="bg-white rounded-lg p-3 text-slate-800 mt-8">
@@ -275,16 +315,13 @@
                                 <div class="text-sm font-bold leading-tight pl-2">${m.teamA[0].name}<br>${m.teamA[1].name}</div>
                                 <button onclick="finishMatch(${m.id}, 'A_WIN')" class="${controlClass} bg-indigo-100 text-indigo-700 px-3 py-1 rounded-full text-xs font-bold hover:bg-indigo-200 shadow-sm border border-indigo-200">A ชนะ</button>
                             </div>
-                            
                             <div class="flex justify-center my-1">
                                 <button onclick="finishMatch(${m.id}, 'DRAW')" class="${controlClass} bg-slate-100 text-slate-500 px-4 py-0.5 rounded-full text-[10px] font-bold hover:bg-slate-200 border border-slate-300">เสมอ</button>
                             </div>
-
                             <div class="flex justify-between items-center mt-1 p-1 rounded hover:bg-orange-50 border-l-4 border-orange-500">
                                 <div class="text-sm font-bold leading-tight pl-2">${m.teamB[0].name}<br>${m.teamB[1].name}</div>
                                 <button onclick="finishMatch(${m.id}, 'B_WIN')" class="${controlClass} bg-orange-100 text-orange-700 px-3 py-1 rounded-full text-xs font-bold hover:bg-orange-200 shadow-sm border border-orange-200">B ชนะ</button>
                             </div>
-                            
                             ${!showControls ? '<div class="text-center text-[10px] text-slate-300 mt-2">รอผลการแข่งขัน...</div>' : ''}
                         </div>
                     </div>
@@ -292,8 +329,7 @@
             });
         }
 
-        // --- Logic Functions ---
-        
+        // --- Logic ---
         function calculateStats(player, filter) {
             if (filter === 'all') return { value: player.score, label: 'MMR', displayClass: 'text-slate-800' };
             const now = new Date();
@@ -303,20 +339,15 @@
 
             const timestampCutoff = cutoff.getTime();
             const relevantMatches = historyList.filter(m => m.timestamp >= timestampCutoff);
-            
-            let netChange = 0;
-            let wins = 0, draws = 0, losses = 0;
+            let netChange = 0; let wins = 0, draws = 0, losses = 0;
 
             relevantMatches.forEach(m => {
                 let change = 0;
                 if (m.teamA_ids.includes(player.id)) change = m.change_A;
                 else if (m.teamB_ids.includes(player.id)) change = m.change_B;
-                
                 if (change !== 0) {
                     netChange += change;
-                    if (change > 0 && change >= SCORE_WIN) wins++;
-                    else if (change < 0) losses++;
-                    else draws++;
+                    if (change > 0 && change >= SCORE_WIN) wins++; else if (change < 0) losses++; else draws++;
                 }
             });
 
@@ -341,74 +372,46 @@
             await addDoc(playersRef, { name: name, score: 1000, matches: 0, wins: 0, draws: 0, losses: 0, isPresent: true, createdAt: Date.now() });
             document.getElementById('inputName').value = '';
         };
-
-        window.togglePresence = async (id, currentStatus) => {
-            await updateDoc(doc(db, "players", id), { isPresent: !currentStatus });
-        }
-
+        window.togglePresence = async (id, currentStatus) => { await updateDoc(doc(db, "players", id), { isPresent: !currentStatus }); }
         window.resetDay = async () => {
             if(!confirm("รีเซ็ตการเช็คชื่อ?")) return;
             const batch = writeBatch(db);
             playersList.forEach(p => batch.update(doc(db, "players", p.id), { isPresent: false }));
             await batch.commit();
         }
-        
-        window.deletePlayer = async (id) => {
-             if(confirm("ลบคนนี้ถาวร?")) await deleteDoc(doc(db, "players", id));
-        }
+        window.deletePlayer = async (id) => { if(confirm("ลบคนนี้ถาวร?")) await deleteDoc(doc(db, "players", id)); }
 
         document.getElementById('btnGenerate').onclick = async () => {
             const maxCourts = parseInt(document.getElementById('courtCount').value);
             const slots = maxCourts - activeMatches.length;
             if (slots <= 0) return alert("คอร์ทเต็ม!");
-
             const playingIds = new Set();
-            activeMatches.forEach(m => {
-                m.teamA.forEach(p => playingIds.add(p.id));
-                m.teamB.forEach(p => playingIds.add(p.id));
-            });
-
+            activeMatches.forEach(m => { m.teamA.forEach(p => playingIds.add(p.id)); m.teamB.forEach(p => playingIds.add(p.id)); });
             let pool = playersList.filter(p => p.isPresent && !playingIds.has(p.id));
             if (pool.length < 4) return alert("คนไม่พอ!");
-            
             pool.sort((a, b) => a.matches - b.matches || 0.5 - Math.random());
-
             const newMatches = [...activeMatches];
             for (let i = 0; i < slots; i++) {
                 if (pool.length < 4) break;
                 let sel = pool.slice(0, 4);
                 pool = pool.slice(4);
                 sel.sort((a, b) => b.score - a.score);
-                newMatches.push({
-                    id: Date.now() + i,
-                    courtNo: findNextCourtNo(newMatches),
-                    teamA: [sel[0], sel[3]],
-                    teamB: [sel[1], sel[2]],
-                    startTime: Date.now()
-                });
+                newMatches.push({ id: Date.now() + i, courtNo: findNextCourtNo(newMatches), teamA: [sel[0], sel[3]], teamB: [sel[1], sel[2]], startTime: Date.now() });
             }
             await setDoc(systemRef, { matches: newMatches });
         };
-
-        function findNextCourtNo(list) {
-            const used = new Set(list.map(m => m.courtNo));
-            let i = 1; while(used.has(i)) i++; return i;
-        }
+        function findNextCourtNo(list) { const used = new Set(list.map(m => m.courtNo)); let i = 1; while(used.has(i)) i++; return i; }
 
         window.finishMatch = async (matchId, result) => {
             const msg = result === 'DRAW' ? 'ยืนยันผล เสมอ?' : `ยืนยันทีม ${result === 'A_WIN' ? 'A' : 'B'} ชนะ?`;
             if (!confirm(msg)) return;
-
             const match = activeMatches.find(m => m.id === matchId);
             if (!match) return;
-
             const batch = writeBatch(db);
             let changeA = 0, changeB = 0;
-
             if (result === 'A_WIN') { changeA = SCORE_WIN; changeB = SCORE_LOSS; }
             else if (result === 'B_WIN') { changeA = SCORE_LOSS; changeB = SCORE_WIN; }
             else { changeA = SCORE_DRAW; changeB = SCORE_DRAW; }
-
             [...match.teamA, ...match.teamB].forEach(p => {
                 const isA = match.teamA.some(x => x.id === p.id);
                 const change = isA ? changeA : changeB;
@@ -422,28 +425,14 @@
                     batch.update(ref, { score: newScore, matches: curr.matches + 1, wins, draws, losses });
                 }
             });
-
             const historyDoc = doc(historyRef);
-            batch.set(historyDoc, {
-                timestamp: Date.now(),
-                result_type: result,
-                teamA_ids: match.teamA.map(p => p.id),
-                teamB_ids: match.teamB.map(p => p.id),
-                change_A: changeA,
-                change_B: changeB
-            });
-
+            batch.set(historyDoc, { timestamp: Date.now(), result_type: result, teamA_ids: match.teamA.map(p => p.id), teamB_ids: match.teamB.map(p => p.id), change_A: changeA, change_B: changeB });
             const remaining = activeMatches.filter(m => m.id !== matchId);
             batch.set(systemRef, { matches: remaining });
             await batch.commit();
         };
 
-        window.cancelMatch = async (matchId) => {
-            if(!confirm("ยกเลิก?")) return;
-            const remaining = activeMatches.filter(m => m.id !== matchId);
-            await setDoc(systemRef, { matches: remaining });
-        }
-
+        window.cancelMatch = async (matchId) => { if(!confirm("ยกเลิก?")) return; const remaining = activeMatches.filter(m => m.id !== matchId); await setDoc(systemRef, { matches: remaining }); }
         window.setFilter = (filter) => {
             currentFilter = filter;
             ['all','month','day'].forEach(f => {
@@ -459,29 +448,19 @@
         function renderList() {
             const list = document.getElementById('listContainer');
             list.innerHTML = '';
-            
-            let displayList = playersList.map(p => {
-                const stats = calculateStats(p, currentFilter);
-                return { ...p, ...stats };
-            });
-
+            let displayList = playersList.map(p => { const stats = calculateStats(p, currentFilter); return { ...p, ...stats }; });
             displayList.sort((a, b) => b.value - a.value);
-
             const playingIds = new Set();
             activeMatches.forEach(m => { m.teamA.forEach(p => playingIds.add(p.id)); m.teamB.forEach(p => playingIds.add(p.id)); });
 
             displayList.forEach((p, idx) => {
                 if (currentFilter !== 'all' && p.value === 0) return;
-
                 const rankInfo = getRankTier(p.score);
                 const isPlaying = playingIds.has(p.id);
-
                 list.innerHTML += `
                     <div class="flex justify-between items-center p-3 rounded-lg border border-slate-100 mb-2 ${rankInfo.color} ${!p.isPresent ? 'opacity-50 bg-slate-50 grayscale' : 'bg-white'} relative">
                         <div class="flex items-center gap-3">
-                            <div class="admin-only">
-                                <input type="checkbox" ${p.isPresent ? 'checked' : ''} onchange="togglePresence('${p.id}', ${p.isPresent})" class="w-4 h-4 rounded text-indigo-600 cursor-pointer">
-                            </div>
+                            <div class="admin-only"><input type="checkbox" ${p.isPresent ? 'checked' : ''} onchange="togglePresence('${p.id}', ${p.isPresent})" class="w-4 h-4 rounded text-indigo-600 cursor-pointer"></div>
                             <div class="font-bold text-slate-400 w-5 text-center text-sm">${idx+1}</div>
                             <div>
                                 <div class="font-bold text-slate-700 flex items-center gap-2">
@@ -495,41 +474,23 @@
                             </div>
                         </div>
                         <div class="flex items-center gap-3">
-                            <div class="text-right">
-                                <div class="font-bold text-lg ${p.displayClass}">${p.label}</div>
-                                <div class="text-[10px] text-slate-400">แข่ง ${p.matches}</div>
-                            </div>
+                            <div class="text-right"><div class="font-bold text-lg ${p.displayClass}">${p.label}</div><div class="text-[10px] text-slate-400">แข่ง ${p.matches}</div></div>
                             <button onclick="deletePlayer('${p.id}')" class="admin-only text-slate-300 hover:text-red-500 text-xl px-2">×</button>
                         </div>
                     </div>
                 `;
             });
-
             if(list.innerHTML === '') list.innerHTML = `<div class="text-center text-sm text-slate-400 py-4">ยังไม่มีข้อมูล...</div>`;
         }
 
         window.toggleAdmin = function() {
             if(isAdminMode) {
-                // Logout
-                isAdminMode = false;
-                document.body.classList.remove('show-admin');
-                const panel = document.getElementById('adminPanel');
-                const addBox = document.getElementById('addPlayerBox');
-                panel.classList.add('hidden'); 
-                addBox.classList.add('hidden');
-                renderCourts(); // Re-render to hide delete/cancel buttons
+                isAdminMode = false; document.body.classList.remove('show-admin');
+                document.getElementById('adminPanel').classList.add('hidden'); document.getElementById('addPlayerBox').classList.add('hidden');
+                renderCourts();
             } else {
-                // Login
                 const pass = prompt("Admin Password:");
-                if (pass === "1234") { 
-                    isAdminMode = true;
-                    document.body.classList.add('show-admin');
-                    const panel = document.getElementById('adminPanel');
-                    const addBox = document.getElementById('addPlayerBox');
-                    panel.classList.remove('hidden'); 
-                    addBox.classList.remove('hidden');
-                    renderCourts(); // Re-render to show controls
-                }
+                if (pass === "1234") { isAdminMode = true; document.body.classList.add('show-admin'); document.getElementById('adminPanel').classList.remove('hidden'); document.getElementById('addPlayerBox').classList.remove('hidden'); renderCourts(); }
             }
         }
     </script>
