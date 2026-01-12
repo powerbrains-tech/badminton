@@ -9,39 +9,24 @@
     <style>
         body { font-family: 'Kanit', sans-serif; background-color: #f1f5f9; }
         
-        /* --- RANK FRAMES (กรอบแรงค์) --- */
-        .card-base { border: 2px solid; transition: all 0.3s; }
-
-        /* Rookie (เทา) */
+        /* Rank Frames */
+        .card-base { border: 2px solid; transition: all 0.2s; }
         .frame-rookie { border-color: #cbd5e1; background: white; }
-        
-        /* Bronze (ทองแดง) */
         .frame-bronze { border-color: #fbbf24; background: linear-gradient(to right, #fffbeb, #fff); }
-        
-        /* Silver (เงิน) */
         .frame-silver { border-color: #94a3b8; background: linear-gradient(to right, #f1f5f9, #fff); }
-        
-        /* Gold (ทอง) */
-        .frame-gold { border-color: #eab308; background: linear-gradient(to right, #fefce8, #fff); box-shadow: 0 4px 6px -1px rgba(234, 179, 8, 0.2); }
-        
-        /* Diamond (ฟ้า) */
-        .frame-diamond { border-color: #0ea5e9; background: linear-gradient(to right, #f0f9ff, #fff); box-shadow: 0 4px 10px -1px rgba(14, 165, 233, 0.3); }
-        
-        /* Grand Master (ม่วง + Glow) */
-        .frame-master { 
-            border-color: #a855f7; 
-            background: linear-gradient(to right, #faf5ff, #fff); 
-            box-shadow: 0 0 15px rgba(168, 85, 247, 0.5); 
-            animation: pulse-purple 3s infinite;
-        }
-        @keyframes pulse-purple { 0% { box-shadow: 0 0 10px rgba(168, 85, 247, 0.4); } 50% { box-shadow: 0 0 20px rgba(168, 85, 247, 0.7); } 100% { box-shadow: 0 0 10px rgba(168, 85, 247, 0.4); } }
+        .frame-gold { border-color: #eab308; background: linear-gradient(to right, #fefce8, #fff); box-shadow: 0 2px 4px rgba(234, 179, 8, 0.1); }
+        .frame-diamond { border-color: #0ea5e9; background: linear-gradient(to right, #f0f9ff, #fff); box-shadow: 0 2px 4px rgba(14, 165, 233, 0.2); }
+        .frame-master { border-color: #a855f7; background: linear-gradient(to right, #faf5ff, #fff); box-shadow: 0 0 10px rgba(168, 85, 247, 0.4); animation: pulse-purple 3s infinite; }
+        @keyframes pulse-purple { 0% { box-shadow: 0 0 8px rgba(168, 85, 247, 0.3); } 50% { box-shadow: 0 0 15px rgba(168, 85, 247, 0.6); } 100% { box-shadow: 0 0 8px rgba(168, 85, 247, 0.3); } }
 
         .admin-only { display: none !important; } 
         .show-admin .admin-only { display: block !important; }
         
-        /* Modal */
-        .modal { transition: opacity 0.25s ease; }
-        body.modal-active { overflow-x: hidden; overflow-y: hidden !important; }
+        /* Modal & Animations */
+        .modal { transition: opacity 0.2s ease; }
+        body.modal-active { overflow: hidden !important; }
+        .selected-player { background-color: #4f46e5 !important; color: white !important; border-color: #4f46e5 !important; transform: scale(0.98); }
+        .selected-player .sub-text { color: #a5b4fc !important; }
     </style>
 </head>
 <body class="p-4 max-w-2xl mx-auto pb-40">
@@ -50,17 +35,12 @@
         <div>
             <div class="flex items-center gap-2">
                 <h1 class="text-2xl font-bold text-slate-800">🏸 Badminton <span class="text-indigo-600">Pro</span></h1>
-                <button onclick="openRankInfo()" class="text-[10px] bg-white text-indigo-600 px-3 py-1 rounded-full border border-indigo-100 shadow-sm font-bold flex items-center gap-1 hover:bg-indigo-50">
-                    🏆 ดูเกณฑ์
-                </button>
+                <button onclick="openRankInfo()" class="text-[10px] bg-white text-indigo-600 px-3 py-1 rounded-full border border-indigo-100 shadow-sm font-bold flex items-center gap-1 hover:bg-indigo-50">🏆 ดูเกณฑ์</button>
             </div>
-            
             <button onclick="openIdentityModal()" id="myIdentityBtn" class="text-xs mt-1 bg-white border border-slate-200 px-2 py-1 rounded-full flex items-center gap-1 hover:bg-slate-50 transition shadow-sm">
-                <span class="w-2 h-2 rounded-full bg-slate-300" id="idStatus"></span>
-                <span id="myName">ระบุตัวตน</span>
+                <span class="w-2 h-2 rounded-full bg-slate-300" id="idStatus"></span><span id="myName">ระบุตัวตน</span>
             </button>
         </div>
-        
         <div class="flex gap-2">
             <div id="statusIndicator" class="hidden text-[10px] px-2 py-1 rounded bg-gray-200 text-gray-500">...</div>
             <button onclick="toggleAdmin()" class="text-xl p-2 bg-white shadow rounded-full hover:scale-110 transition">🔒</button>
@@ -68,20 +48,14 @@
     </div>
 
     <div class="bg-slate-800 text-white p-4 rounded-xl shadow-lg mb-6 admin-only hidden" id="adminPanel">
-        <h3 class="font-bold text-sm mb-3 text-slate-300 flex justify-between">
-            ⚙️ Admin Panel
-            <button onclick="resetDay()" class="text-[10px] text-red-300 border border-red-300 px-2 rounded hover:bg-red-500 hover:text-white">รีเซ็ตวันใหม่</button>
-        </h3>
-        <div class="flex gap-3 mb-4">
-            <select id="courtCount" class="bg-slate-700 rounded px-2 py-1 text-sm flex-1">
-                <option value="1">1 คอร์ท</option>
-                <option value="2" selected>2 คอร์ท</option>
-                <option value="3">3 คอร์ท</option>
-            </select>
+        <h3 class="font-bold text-sm mb-3 text-slate-300 flex justify-between">⚙️ Admin Panel <button onclick="resetDay()" class="text-[10px] text-red-300 border border-red-300 px-2 rounded hover:bg-red-500 hover:text-white">รีเซ็ตวันใหม่</button></h3>
+        <div class="flex gap-2 mb-3">
+            <select id="courtCount" class="bg-slate-700 rounded px-2 py-2 text-sm flex-1"><option value="1">1 คอร์ท</option><option value="2" selected>2 คอร์ท</option><option value="3">3 คอร์ท</option></select>
         </div>
-        <button id="btnGenerate" class="w-full bg-indigo-500 hover:bg-indigo-600 py-3 rounded-lg font-bold shadow-lg active:scale-95 transition">
-            🚀 จับคู่ (เฉพาะคนเช็คชื่อ ✅)
-        </button>
+        <div class="grid grid-cols-2 gap-2">
+            <button id="btnGenerate" class="bg-indigo-500 hover:bg-indigo-600 py-3 rounded-lg font-bold shadow-lg active:scale-95 transition text-sm">🚀 สุ่มจับคู่</button>
+            <button onclick="openManualModal()" class="bg-orange-500 hover:bg-orange-600 py-3 rounded-lg font-bold shadow-lg active:scale-95 transition text-sm">👆 จิ้มเลือกเอง</button>
+        </div>
     </div>
 
     <div id="courtsContainer" class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6"></div>
@@ -91,24 +65,18 @@
             <input type="text" id="inputName" placeholder="เพิ่มชื่อสมาชิก..." class="flex-1 bg-slate-50 border rounded px-3 py-2 text-sm">
             <button id="btnAdd" class="bg-indigo-600 text-white px-4 rounded font-bold hover:bg-indigo-700">+</button>
         </div>
-
         <div class="flex p-1 bg-slate-100 rounded-lg mb-4">
             <button onclick="setFilter('all')" id="tab-all" class="flex-1 py-1.5 text-xs font-bold rounded-md bg-white shadow text-indigo-600 transition">ทั้งหมด</button>
             <button onclick="setFilter('month')" id="tab-month" class="flex-1 py-1.5 text-xs font-bold rounded-md text-slate-500 hover:bg-white/50 transition">เดือนนี้</button>
             <button onclick="setFilter('day')" id="tab-day" class="flex-1 py-1.5 text-xs font-bold rounded-md text-slate-500 hover:bg-white/50 transition">วันนี้</button>
         </div>
-
-        <div class="flex justify-between items-end mb-2 px-2">
-            <span class="text-sm font-bold text-slate-700" id="rankTitle">อันดับคะแนน (MMR)</span>
-            <span class="text-[10px] text-slate-400">เช็คชื่อ ✅</span>
-        </div>
-
+        <div class="flex justify-between items-end mb-2 px-2"><span class="text-sm font-bold text-slate-700" id="rankTitle">อันดับคะแนน (MMR)</span><span class="text-[10px] text-slate-400">เช็คชื่อ ✅</span></div>
         <div id="listContainer" class="space-y-3 pb-10"></div>
     </div>
 
     <div id="identityModal" class="modal opacity-0 pointer-events-none fixed w-full h-full top-0 left-0 flex items-center justify-center z-50">
-        <div class="modal-overlay absolute w-full h-full bg-gray-900 opacity-50" onclick="closeIdentityModal()"></div>
-        <div class="modal-container bg-white w-11/12 md:max-w-md mx-auto rounded-xl shadow-2xl z-50 overflow-y-auto max-h-[90vh] p-6">
+        <div class="absolute w-full h-full bg-gray-900 opacity-50" onclick="closeIdentityModal()"></div>
+        <div class="bg-white w-11/12 md:max-w-md mx-auto rounded-xl shadow-2xl z-50 overflow-y-auto max-h-[90vh] p-6 relative">
             <div class="flex justify-between items-center mb-4"><h3 class="text-xl font-bold">👤 คุณคือใคร?</h3><div onclick="closeIdentityModal()" class="cursor-pointer">✖</div></div>
             <input type="text" id="searchIdentity" placeholder="ค้นหาชื่อ..." class="w-full border rounded-lg px-3 py-2 mb-2 bg-slate-50" onkeyup="filterIdentityList()">
             <div id="identityList" class="space-y-1 overflow-y-auto max-h-60"></div>
@@ -116,8 +84,8 @@
     </div>
 
     <div id="rankModal" class="modal opacity-0 pointer-events-none fixed w-full h-full top-0 left-0 flex items-center justify-center z-50">
-        <div class="modal-overlay absolute w-full h-full bg-gray-900 opacity-60" onclick="closeRankModal()"></div>
-        <div class="modal-container bg-white w-11/12 md:max-w-sm mx-auto rounded-xl shadow-2xl z-50 p-6">
+        <div class="absolute w-full h-full bg-gray-900 opacity-60" onclick="closeRankModal()"></div>
+        <div class="bg-white w-11/12 md:max-w-sm mx-auto rounded-xl shadow-2xl z-50 p-6 relative">
             <div class="flex justify-between items-center mb-4"><h3 class="text-xl font-bold">🏆 ระดับแรงค์</h3><div onclick="closeRankModal()" class="cursor-pointer">✖</div></div>
             <div class="space-y-3 text-sm">
                 <div class="flex justify-between p-2 rounded border-2 border-purple-500 bg-purple-50"><span>🔥 GRAND MASTER</span><span class="font-bold">2000+</span></div>
@@ -130,11 +98,45 @@
         </div>
     </div>
 
+    <div id="manualModal" class="modal opacity-0 pointer-events-none fixed w-full h-full top-0 left-0 flex items-center justify-center z-50">
+        <div class="absolute w-full h-full bg-gray-900 opacity-80" onclick="closeManualModal()"></div>
+        <div class="bg-white w-full h-full md:h-auto md:w-11/12 md:max-w-lg md:rounded-xl shadow-2xl z-50 flex flex-col relative">
+            
+            <div class="p-4 border-b flex justify-between items-center bg-slate-50 md:rounded-t-xl">
+                <h3 class="text-lg font-bold text-slate-800">👆 จิ้มเลือกเอง (4 คน)</h3>
+                <button onclick="closeManualModal()" class="text-slate-400 hover:text-red-500 text-2xl leading-none">&times;</button>
+            </div>
+
+            <div class="p-4 bg-slate-100 flex gap-2 justify-center items-center shadow-inner">
+                <div class="flex flex-col gap-2 w-1/2">
+                    <div class="bg-indigo-100 border-2 border-indigo-300 rounded p-2 text-center text-xs font-bold text-indigo-700 min-h-[40px] flex items-center justify-center" id="slot-0">รอเลือก A1...</div>
+                    <div class="bg-indigo-100 border-2 border-indigo-300 rounded p-2 text-center text-xs font-bold text-indigo-700 min-h-[40px] flex items-center justify-center" id="slot-1">รอเลือก A2...</div>
+                </div>
+                <div class="font-bold text-slate-400 text-xs">VS</div>
+                <div class="flex flex-col gap-2 w-1/2">
+                    <div class="bg-orange-100 border-2 border-orange-300 rounded p-2 text-center text-xs font-bold text-orange-700 min-h-[40px] flex items-center justify-center" id="slot-2">รอเลือก B1...</div>
+                    <div class="bg-orange-100 border-2 border-orange-300 rounded p-2 text-center text-xs font-bold text-orange-700 min-h-[40px] flex items-center justify-center" id="slot-3">รอเลือก B2...</div>
+                </div>
+            </div>
+
+            <div class="flex-1 overflow-y-auto p-4 bg-slate-50">
+                <p class="text-xs text-slate-400 mb-2 text-center">แตะที่ชื่อเพื่อนำเข้า/ออก จากสนาม</p>
+                <div id="manualList" class="space-y-2 pb-20"></div>
+            </div>
+
+            <div class="p-4 border-t bg-white absolute bottom-0 w-full md:relative md:rounded-b-xl">
+                <button id="btnConfirmManual" onclick="confirmManualMatch()" disabled class="w-full bg-slate-300 text-white py-3 rounded-xl font-bold shadow transition">
+                    คนยังไม่ครบ (0/4)
+                </button>
+            </div>
+        </div>
+    </div>
+
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js";
         import { getFirestore, collection, addDoc, onSnapshot, doc, updateDoc, deleteDoc, setDoc, writeBatch, query, where, orderBy, limit } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore.js";
 
-        // 🔴🔴 Config 🔴🔴
+        // 🔴 Config 🔴
         const firebaseConfig = {
             apiKey: "AIzaSyC6VSnH2H5zyFPbya0axgP38WiGczYU-oU",
             authDomain: "badminton-smasher-ai.firebaseapp.com",
@@ -145,10 +147,7 @@
             measurementId: "G-6X20YG49K9"
         };
 
-        const SCORE_WIN = 20;
-        const SCORE_DRAW = 5;
-        const SCORE_LOSS = -10;
-
+        const SCORE_WIN = 20; const SCORE_DRAW = 5; const SCORE_LOSS = -10;
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
         
@@ -162,6 +161,7 @@
         let currentFilter = 'all';
         let myProfile = JSON.parse(localStorage.getItem('badminton_user')) || null;
         let isAdminMode = false;
+        let manualSelected = []; // Stores IDs of selected players for manual match
 
         updateIdentityUI();
 
@@ -169,7 +169,7 @@
             playersList = [];
             snapshot.forEach(doc => playersList.push({ id: doc.id, ...doc.data() }));
             renderList();
-            if (myProfile && !playersList.find(p => p.id === myProfile.id)) logoutIdentity();
+            if(document.body.classList.contains('manual-mode-active')) renderManualList(); // Refresh manual list if open
         });
 
         onSnapshot(systemRef, (docSnap) => {
@@ -180,17 +180,149 @@
 
         const qHistory = query(historyRef, orderBy("timestamp", "desc"), limit(2000));
         onSnapshot(qHistory, (snapshot) => {
-            historyList = [];
-            snapshot.forEach(doc => historyList.push(doc.data()));
-            renderList();
+            historyList = []; snapshot.forEach(doc => historyList.push(doc.data())); renderList();
         });
 
         // --- Modals ---
-        window.openRankInfo = () => { document.getElementById('rankModal').classList.remove('opacity-0', 'pointer-events-none'); document.body.classList.add('modal-active'); }
-        window.closeRankModal = () => { document.getElementById('rankModal').classList.add('opacity-0', 'pointer-events-none'); document.body.classList.remove('modal-active'); }
-        window.openIdentityModal = () => { document.getElementById('identityModal').classList.remove('opacity-0', 'pointer-events-none'); document.body.classList.add('modal-active'); renderIdentityList(); }
-        window.closeIdentityModal = () => { document.getElementById('identityModal').classList.add('opacity-0', 'pointer-events-none'); document.body.classList.remove('modal-active'); }
+        window.openRankInfo = () => { document.getElementById('rankModal').classList.remove('opacity-0', 'pointer-events-none'); }
+        window.closeRankModal = () => { document.getElementById('rankModal').classList.add('opacity-0', 'pointer-events-none'); }
+        window.openIdentityModal = () => { document.getElementById('identityModal').classList.remove('opacity-0', 'pointer-events-none'); renderIdentityList(); }
+        window.closeIdentityModal = () => { document.getElementById('identityModal').classList.add('opacity-0', 'pointer-events-none'); }
+        
+        // --- Manual Match Logic ---
+        window.openManualModal = () => {
+            manualSelected = [];
+            updateManualSlots();
+            renderManualList();
+            document.getElementById('manualModal').classList.remove('opacity-0', 'pointer-events-none');
+            document.body.classList.add('manual-mode-active');
+        }
+        window.closeManualModal = () => {
+            document.getElementById('manualModal').classList.add('opacity-0', 'pointer-events-none');
+            document.body.classList.remove('manual-mode-active');
+        }
 
+        window.toggleManualSelect = (id) => {
+            const index = manualSelected.indexOf(id);
+            if (index > -1) {
+                // Remove
+                manualSelected.splice(index, 1);
+            } else {
+                // Add (Max 4)
+                if (manualSelected.length < 4) {
+                    manualSelected.push(id);
+                } else {
+                    return; // Full
+                }
+            }
+            updateManualSlots();
+            renderManualList();
+        }
+
+        function updateManualSlots() {
+            // Update Text in Slots
+            for(let i=0; i<4; i++) {
+                const el = document.getElementById(`slot-${i}`);
+                if (manualSelected[i]) {
+                    const p = playersList.find(x => x.id === manualSelected[i]);
+                    el.innerText = p ? p.name : '...';
+                    el.className = i < 2 
+                        ? "bg-indigo-600 border-2 border-indigo-700 rounded p-2 text-center text-xs font-bold text-white min-h-[40px] flex items-center justify-center shadow"
+                        : "bg-orange-500 border-2 border-orange-600 rounded p-2 text-center text-xs font-bold text-white min-h-[40px] flex items-center justify-center shadow";
+                } else {
+                    el.innerText = i < 2 ? `รอเลือก A${i+1}...` : `รอเลือก B${i-1}...`;
+                    el.className = i < 2
+                        ? "bg-indigo-50 border-2 border-dashed border-indigo-200 rounded p-2 text-center text-xs text-indigo-300 min-h-[40px] flex items-center justify-center"
+                        : "bg-orange-50 border-2 border-dashed border-orange-200 rounded p-2 text-center text-xs text-orange-300 min-h-[40px] flex items-center justify-center";
+                }
+            }
+
+            // Update Button
+            const btn = document.getElementById('btnConfirmManual');
+            if (manualSelected.length === 4) {
+                btn.disabled = false;
+                btn.innerText = "✅ เริ่มแข่งทันที";
+                btn.className = "w-full bg-green-500 hover:bg-green-600 text-white py-3 rounded-xl font-bold shadow-lg transition transform active:scale-95";
+            } else {
+                btn.disabled = true;
+                btn.innerText = `คนยังไม่ครบ (${manualSelected.length}/4)`;
+                btn.className = "w-full bg-slate-300 text-white py-3 rounded-xl font-bold shadow transition cursor-not-allowed";
+            }
+        }
+
+        function renderManualList() {
+            const list = document.getElementById('manualList');
+            list.innerHTML = '';
+
+            // Filter: Must be Present + Not playing in other matches
+            const playingIds = new Set();
+            activeMatches.forEach(m => { m.teamA.forEach(p => playingIds.add(p.id)); m.teamB.forEach(p => playingIds.add(p.id)); });
+
+            let eligible = playersList.filter(p => p.isPresent).sort((a,b) => b.score - a.score);
+
+            eligible.forEach(p => {
+                const isSelected = manualSelected.includes(p.id);
+                const isPlaying = playingIds.has(p.id);
+                const rankInfo = getRankInfo(p.score);
+
+                // Disable logic
+                let cardClass = `flex justify-between items-center p-3 rounded-lg border-2 mb-2 relative transition cursor-pointer select-none `;
+                
+                if (isSelected) {
+                    cardClass += "selected-player border-indigo-500 shadow-md";
+                } else if (isPlaying) {
+                    cardClass += "bg-slate-100 border-slate-100 opacity-40 cursor-not-allowed grayscale";
+                } else {
+                    cardClass += `bg-white ${rankInfo.frame} hover:bg-slate-50`;
+                }
+
+                const onclick = isPlaying ? '' : `onclick="toggleManualSelect('${p.id}')"`;
+
+                list.innerHTML += `
+                    <div ${onclick} class="${cardClass}">
+                        <div class="flex items-center gap-3">
+                            <div class="font-bold text-lg">${rankInfo.icon}</div>
+                            <div>
+                                <div class="font-bold text-sm ${isSelected ? 'text-white' : 'text-slate-700'}">
+                                    ${p.name}
+                                    ${isPlaying ? '<span class="text-[10px] text-red-500">(เล่นอยู่)</span>' : ''}
+                                </div>
+                                <div class="text-[10px] ${isSelected ? 'sub-text' : 'text-slate-400'} font-bold">
+                                    ${rankInfo.name} | MMR ${p.score}
+                                </div>
+                            </div>
+                        </div>
+                        ${isSelected ? '<div class="text-white text-xl">✓</div>' : ''}
+                    </div>
+                `;
+            });
+        }
+
+        window.confirmManualMatch = async () => {
+            if (manualSelected.length !== 4) return;
+            
+            // Construct Match Object
+            // Slot 0,1 = Team A | Slot 2,3 = Team B
+            const pA1 = playersList.find(x => x.id === manualSelected[0]);
+            const pA2 = playersList.find(x => x.id === manualSelected[1]);
+            const pB1 = playersList.find(x => x.id === manualSelected[2]);
+            const pB2 = playersList.find(x => x.id === manualSelected[3]);
+
+            const newMatches = [...activeMatches];
+            newMatches.push({
+                id: Date.now(),
+                courtNo: findNextCourtNo(newMatches),
+                teamA: [pA1, pA2],
+                teamB: [pB1, pB2],
+                startTime: Date.now()
+            });
+
+            await setDoc(systemRef, { matches: newMatches });
+            closeManualModal();
+        }
+
+
+        // --- Render Lists ---
         window.renderIdentityList = () => {
             const list = document.getElementById('identityList');
             const search = document.getElementById('searchIdentity').value.toLowerCase();
@@ -206,13 +338,11 @@
         window.selectIdentity = (id, name) => { myProfile = { id, name }; localStorage.setItem('badminton_user', JSON.stringify(myProfile)); updateIdentityUI(); closeIdentityModal(); renderCourts(); }
         window.logoutIdentity = () => { myProfile = null; localStorage.removeItem('badminton_user'); updateIdentityUI(); closeIdentityModal(); renderCourts(); }
         function updateIdentityUI() {
-            const nameEl = document.getElementById('myName');
-            const statusEl = document.getElementById('idStatus');
+            const nameEl = document.getElementById('myName'); const statusEl = document.getElementById('idStatus');
             if (myProfile) { nameEl.innerText = myProfile.name; nameEl.className = "font-bold text-indigo-700"; statusEl.className = "w-2 h-2 rounded-full bg-green-500"; }
             else { nameEl.innerText = "ระบุตัวตน"; nameEl.className = "text-slate-500"; statusEl.className = "w-2 h-2 rounded-full bg-slate-300"; }
         }
 
-        // --- Render Courts ---
         function renderCourts() {
             const container = document.getElementById('courtsContainer');
             container.innerHTML = '';
@@ -248,7 +378,7 @@
             });
         }
 
-        // --- Logic ---
+        // --- Core ---
         function calculateStats(player, filter) {
             if (filter === 'all') return { value: player.score, label: 'MMR', displayClass: 'text-slate-800' };
             const now = new Date(); let cutoff = new Date();
@@ -267,7 +397,6 @@
             let displayClass = netChange > 0 ? 'text-green-600' : (netChange < 0 ? 'text-red-500' : 'text-slate-400');
             return { value: netChange, label, displayClass, wins, draws, losses };
         }
-
         function getRankInfo(score) {
             if (score >= 2000) return { frame: 'frame-master', icon: '🔥', name: 'Grand Master' };
             if (score >= 1800) return { frame: 'frame-diamond', icon: '💎', name: 'Diamond' };
