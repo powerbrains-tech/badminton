@@ -7,47 +7,57 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;600&display=swap" rel="stylesheet">
     <style>
-        body { font-family: 'Kanit', sans-serif; background-color: #f8fafc; }
+        body { font-family: 'Kanit', sans-serif; background-color: #f1f5f9; }
         
-        /* Rank Colors Indicators */
-        .rank-rookie { border-left: 4px solid #94a3b8; }
-        .rank-bronze { border-left: 4px solid #d97706; background: linear-gradient(90deg, #fffbeb 0%, #fff 100%); }
-        .rank-silver { border-left: 4px solid #64748b; background: linear-gradient(90deg, #f8fafc 0%, #fff 100%); }
-        .rank-gold   { border-left: 4px solid #eab308; background: linear-gradient(90deg, #fefce8 0%, #fff 100%); }
-        .rank-diamond{ border-left: 4px solid #0ea5e9; background: linear-gradient(90deg, #f0f9ff 0%, #fff 100%); }
-        .rank-master { border-left: 4px solid #a855f7; background: linear-gradient(90deg, #faf5ff 0%, #fff 100%); }
+        /* --- RANK FRAMES (กรอบแรงค์) --- */
+        .card-base { border: 2px solid; transition: all 0.3s; }
+
+        /* Rookie (เทา) */
+        .frame-rookie { border-color: #cbd5e1; background: white; }
+        
+        /* Bronze (ทองแดง) */
+        .frame-bronze { border-color: #fbbf24; background: linear-gradient(to right, #fffbeb, #fff); }
+        
+        /* Silver (เงิน) */
+        .frame-silver { border-color: #94a3b8; background: linear-gradient(to right, #f1f5f9, #fff); }
+        
+        /* Gold (ทอง) */
+        .frame-gold { border-color: #eab308; background: linear-gradient(to right, #fefce8, #fff); box-shadow: 0 4px 6px -1px rgba(234, 179, 8, 0.2); }
+        
+        /* Diamond (ฟ้า) */
+        .frame-diamond { border-color: #0ea5e9; background: linear-gradient(to right, #f0f9ff, #fff); box-shadow: 0 4px 10px -1px rgba(14, 165, 233, 0.3); }
+        
+        /* Grand Master (ม่วง + Glow) */
+        .frame-master { 
+            border-color: #a855f7; 
+            background: linear-gradient(to right, #faf5ff, #fff); 
+            box-shadow: 0 0 15px rgba(168, 85, 247, 0.5); 
+            animation: pulse-purple 3s infinite;
+        }
+        @keyframes pulse-purple { 0% { box-shadow: 0 0 10px rgba(168, 85, 247, 0.4); } 50% { box-shadow: 0 0 20px rgba(168, 85, 247, 0.7); } 100% { box-shadow: 0 0 10px rgba(168, 85, 247, 0.4); } }
 
         .admin-only { display: none !important; } 
         .show-admin .admin-only { display: block !important; }
-        .show-admin .admin-flex { display: flex !important; }
-
+        
         /* Modal */
         .modal { transition: opacity 0.25s ease; }
         body.modal-active { overflow-x: hidden; overflow-y: hidden !important; }
-
-        /* Rank Badge Styles for Legend */
-        .badge-rookie { background-color: #f1f5f9; color: #64748b; border: 1px solid #cbd5e1; }
-        .badge-bronze { background-color: #fffbeb; color: #d97706; border: 1px solid #fcd34d; }
-        .badge-silver { background-color: #f8fafc; color: #64748b; border: 1px solid #94a3b8; }
-        .badge-gold   { background-color: #fefce8; color: #ca8a04; border: 1px solid #fde047; }
-        .badge-diamond{ background-color: #f0f9ff; color: #0284c7; border: 1px solid #7dd3fc; }
-        .badge-master { background-color: #faf5ff; color: #9333ea; border: 1px solid #d8b4fe; }
     </style>
 </head>
 <body class="p-4 max-w-2xl mx-auto pb-40">
 
-    <div class="flex justify-between items-center mb-2 sticky top-0 bg-[#f8fafc] z-20 py-2">
+    <div class="flex justify-between items-center mb-2 sticky top-0 bg-[#f1f5f9] z-20 py-2">
         <div>
             <div class="flex items-center gap-2">
                 <h1 class="text-2xl font-bold text-slate-800">🏸 Badminton <span class="text-indigo-600">Pro</span></h1>
-                <button onclick="openRankInfo()" class="text-[10px] bg-indigo-50 text-indigo-600 px-2 py-1 rounded-full border border-indigo-100 hover:bg-indigo-100 font-bold flex items-center gap-1">
-                    🏆 ดูเกณฑ์คะแนน
+                <button onclick="openRankInfo()" class="text-[10px] bg-white text-indigo-600 px-3 py-1 rounded-full border border-indigo-100 shadow-sm font-bold flex items-center gap-1 hover:bg-indigo-50">
+                    🏆 ดูเกณฑ์
                 </button>
             </div>
             
             <button onclick="openIdentityModal()" id="myIdentityBtn" class="text-xs mt-1 bg-white border border-slate-200 px-2 py-1 rounded-full flex items-center gap-1 hover:bg-slate-50 transition shadow-sm">
                 <span class="w-2 h-2 rounded-full bg-slate-300" id="idStatus"></span>
-                <span id="myName">ยังไม่ระบุตัวตน (แตะเพื่อเลือก)</span>
+                <span id="myName">ระบุตัวตน</span>
             </button>
         </div>
         
@@ -59,7 +69,7 @@
 
     <div class="bg-slate-800 text-white p-4 rounded-xl shadow-lg mb-6 admin-only hidden" id="adminPanel">
         <h3 class="font-bold text-sm mb-3 text-slate-300 flex justify-between">
-            ⚙️ แผงควบคุม (Admin)
+            ⚙️ Admin Panel
             <button onclick="resetDay()" class="text-[10px] text-red-300 border border-red-300 px-2 rounded hover:bg-red-500 hover:text-white">รีเซ็ตวันใหม่</button>
         </h3>
         <div class="flex gap-3 mb-4">
@@ -93,63 +103,29 @@
             <span class="text-[10px] text-slate-400">เช็คชื่อ ✅</span>
         </div>
 
-        <div id="listContainer" class="space-y-2 pb-10"></div>
+        <div id="listContainer" class="space-y-3 pb-10"></div>
     </div>
 
     <div id="identityModal" class="modal opacity-0 pointer-events-none fixed w-full h-full top-0 left-0 flex items-center justify-center z-50">
         <div class="modal-overlay absolute w-full h-full bg-gray-900 opacity-50" onclick="closeIdentityModal()"></div>
-        <div class="modal-container bg-white w-11/12 md:max-w-md mx-auto rounded-xl shadow-2xl z-50 overflow-y-auto max-h-[90vh]">
-            <div class="modal-content py-4 text-left px-6">
-                <div class="flex justify-between items-center pb-3">
-                    <p class="text-xl font-bold">👤 คุณคือใคร?</p>
-                    <div class="cursor-pointer z-50 p-2" onclick="closeIdentityModal()">✖</div>
-                </div>
-                <input type="text" id="searchIdentity" placeholder="ค้นหาชื่อ..." class="w-full border rounded-lg px-3 py-2 mb-2 text-sm bg-slate-50" onkeyup="filterIdentityList()">
-                <div id="identityList" class="space-y-1 overflow-y-auto max-h-60"></div>
-            </div>
+        <div class="modal-container bg-white w-11/12 md:max-w-md mx-auto rounded-xl shadow-2xl z-50 overflow-y-auto max-h-[90vh] p-6">
+            <div class="flex justify-between items-center mb-4"><h3 class="text-xl font-bold">👤 คุณคือใคร?</h3><div onclick="closeIdentityModal()" class="cursor-pointer">✖</div></div>
+            <input type="text" id="searchIdentity" placeholder="ค้นหาชื่อ..." class="w-full border rounded-lg px-3 py-2 mb-2 bg-slate-50" onkeyup="filterIdentityList()">
+            <div id="identityList" class="space-y-1 overflow-y-auto max-h-60"></div>
         </div>
     </div>
 
     <div id="rankModal" class="modal opacity-0 pointer-events-none fixed w-full h-full top-0 left-0 flex items-center justify-center z-50">
         <div class="modal-overlay absolute w-full h-full bg-gray-900 opacity-60" onclick="closeRankModal()"></div>
-        <div class="modal-container bg-white w-11/12 md:max-w-sm mx-auto rounded-xl shadow-2xl z-50 animate-bounce-in">
-            <div class="modal-content py-6 text-left px-6">
-                <div class="flex justify-between items-center mb-4">
-                    <h3 class="text-xl font-bold text-slate-800">🏆 ระดับและเกณฑ์คะแนน</h3>
-                    <div class="cursor-pointer p-2 text-slate-400 hover:text-slate-600" onclick="closeRankModal()">✖</div>
-                </div>
-                
-                <div class="space-y-3">
-                    <div class="flex items-center justify-between p-2 rounded-lg badge-master">
-                        <div class="font-bold flex items-center gap-2">🔥 GRAND MASTER</div>
-                        <div class="font-mono font-bold">2000+</div>
-                    </div>
-                    <div class="flex items-center justify-between p-2 rounded-lg badge-diamond">
-                        <div class="font-bold flex items-center gap-2">💎 DIAMOND</div>
-                        <div class="font-mono font-bold">1800 - 1999</div>
-                    </div>
-                    <div class="flex items-center justify-between p-2 rounded-lg badge-gold">
-                        <div class="font-bold flex items-center gap-2">🥇 GOLD</div>
-                        <div class="font-mono font-bold">1500 - 1799</div>
-                    </div>
-                    <div class="flex items-center justify-between p-2 rounded-lg badge-silver">
-                        <div class="font-bold flex items-center gap-2">🥈 SILVER</div>
-                        <div class="font-mono font-bold">1300 - 1499</div>
-                    </div>
-                    <div class="flex items-center justify-between p-2 rounded-lg badge-bronze">
-                        <div class="font-bold flex items-center gap-2">🥉 BRONZE</div>
-                        <div class="font-mono font-bold">1100 - 1299</div>
-                    </div>
-                    <div class="flex items-center justify-between p-2 rounded-lg badge-rookie">
-                        <div class="font-bold flex items-center gap-2">🐣 ROOKIE</div>
-                        <div class="font-mono font-bold">0 - 1099</div>
-                    </div>
-                </div>
-                
-                <div class="mt-6 pt-4 border-t border-slate-100 text-xs text-slate-500 text-center">
-                    <p>ชนะ +20 | เสมอ +5 | แพ้ -10</p>
-                    <p class="mt-1">รีบเก็บแต้มไต่แรงค์กันเถอะ!</p>
-                </div>
+        <div class="modal-container bg-white w-11/12 md:max-w-sm mx-auto rounded-xl shadow-2xl z-50 p-6">
+            <div class="flex justify-between items-center mb-4"><h3 class="text-xl font-bold">🏆 ระดับแรงค์</h3><div onclick="closeRankModal()" class="cursor-pointer">✖</div></div>
+            <div class="space-y-3 text-sm">
+                <div class="flex justify-between p-2 rounded border-2 border-purple-500 bg-purple-50"><span>🔥 GRAND MASTER</span><span class="font-bold">2000+</span></div>
+                <div class="flex justify-between p-2 rounded border-2 border-sky-500 bg-sky-50"><span>💎 DIAMOND</span><span class="font-bold">1800+</span></div>
+                <div class="flex justify-between p-2 rounded border-2 border-yellow-400 bg-yellow-50"><span>🥇 GOLD</span><span class="font-bold">1500+</span></div>
+                <div class="flex justify-between p-2 rounded border-2 border-slate-400 bg-slate-50"><span>🥈 SILVER</span><span class="font-bold">1300+</span></div>
+                <div class="flex justify-between p-2 rounded border-2 border-orange-400 bg-orange-50"><span>🥉 BRONZE</span><span class="font-bold">1100+</span></div>
+                <div class="flex justify-between p-2 rounded border-2 border-slate-200"><span>🐣 ROOKIE</span><span class="font-bold">0-1099</span></div>
             </div>
         </div>
     </div>
@@ -158,7 +134,7 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js";
         import { getFirestore, collection, addDoc, onSnapshot, doc, updateDoc, deleteDoc, setDoc, writeBatch, query, where, orderBy, limit } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore.js";
 
-        // 🔴🔴 Config เดิมของคุณ 🔴🔴
+        // 🔴🔴 Config 🔴🔴
         const firebaseConfig = {
             apiKey: "AIzaSyC6VSnH2H5zyFPbya0axgP38WiGczYU-oU",
             authDomain: "badminton-smasher-ai.firebaseapp.com",
@@ -169,7 +145,6 @@
             measurementId: "G-6X20YG49K9"
         };
 
-        // Game Rules
         const SCORE_WIN = 20;
         const SCORE_DRAW = 5;
         const SCORE_LOSS = -10;
@@ -188,10 +163,8 @@
         let myProfile = JSON.parse(localStorage.getItem('badminton_user')) || null;
         let isAdminMode = false;
 
-        // --- Init ---
         updateIdentityUI();
 
-        // --- Listeners ---
         onSnapshot(playersRef, (snapshot) => {
             playersList = [];
             snapshot.forEach(doc => playersList.push({ id: doc.id, ...doc.data() }));
@@ -212,75 +185,31 @@
             renderList();
         });
 
-        // --- Modals Logic ---
-        window.openRankInfo = () => {
-            const modal = document.getElementById('rankModal');
-            modal.classList.remove('opacity-0', 'pointer-events-none');
-            document.body.classList.add('modal-active');
-        }
-        window.closeRankInfo = () => { /* Alias */ closeRankModal(); }
-        window.closeRankModal = () => {
-            const modal = document.getElementById('rankModal');
-            modal.classList.add('opacity-0', 'pointer-events-none');
-            document.body.classList.remove('modal-active');
-        }
+        // --- Modals ---
+        window.openRankInfo = () => { document.getElementById('rankModal').classList.remove('opacity-0', 'pointer-events-none'); document.body.classList.add('modal-active'); }
+        window.closeRankModal = () => { document.getElementById('rankModal').classList.add('opacity-0', 'pointer-events-none'); document.body.classList.remove('modal-active'); }
+        window.openIdentityModal = () => { document.getElementById('identityModal').classList.remove('opacity-0', 'pointer-events-none'); document.body.classList.add('modal-active'); renderIdentityList(); }
+        window.closeIdentityModal = () => { document.getElementById('identityModal').classList.add('opacity-0', 'pointer-events-none'); document.body.classList.remove('modal-active'); }
 
-        window.openIdentityModal = () => {
-            const modal = document.getElementById('identityModal');
-            modal.classList.remove('opacity-0', 'pointer-events-none');
-            document.body.classList.add('modal-active');
-            renderIdentityList();
-        }
-        window.closeIdentityModal = () => {
-            const modal = document.getElementById('identityModal');
-            modal.classList.add('opacity-0', 'pointer-events-none');
-            document.body.classList.remove('modal-active');
-        }
-
-        // --- Identity ---
         window.renderIdentityList = () => {
             const list = document.getElementById('identityList');
             const search = document.getElementById('searchIdentity').value.toLowerCase();
             list.innerHTML = '';
-            
             const filtered = playersList.filter(p => p.name.toLowerCase().includes(search));
-            
-            if(myProfile) {
-                list.innerHTML += `<button onclick="logoutIdentity()" class="w-full text-left px-4 py-2 text-red-500 font-bold border border-red-200 rounded hover:bg-red-50 mb-2">ออกจากระบบ (${myProfile.name})</button>`;
-            }
-
+            if(myProfile) list.innerHTML += `<button onclick="logoutIdentity()" class="w-full text-left px-4 py-2 text-red-500 font-bold border border-red-200 rounded hover:bg-red-50 mb-2">ออกจากระบบ (${myProfile.name})</button>`;
             filtered.sort((a,b) => a.name.localeCompare(b.name)).forEach(p => {
                 const isActive = myProfile && myProfile.id === p.id;
                 list.innerHTML += `<button onclick="selectIdentity('${p.id}', '${p.name}')" class="w-full text-left px-4 py-3 rounded border ${isActive ? 'bg-indigo-50 border-indigo-500 text-indigo-700' : 'bg-white border-slate-100 hover:bg-slate-50'}">${p.name} ${isActive ? '✅' : ''}</button>`;
             });
         }
         window.filterIdentityList = renderIdentityList;
-        window.selectIdentity = (id, name) => {
-            myProfile = { id, name };
-            localStorage.setItem('badminton_user', JSON.stringify(myProfile));
-            updateIdentityUI();
-            closeIdentityModal();
-            renderCourts();
-        }
-        window.logoutIdentity = () => {
-            myProfile = null;
-            localStorage.removeItem('badminton_user');
-            updateIdentityUI();
-            closeIdentityModal();
-            renderCourts();
-        }
+        window.selectIdentity = (id, name) => { myProfile = { id, name }; localStorage.setItem('badminton_user', JSON.stringify(myProfile)); updateIdentityUI(); closeIdentityModal(); renderCourts(); }
+        window.logoutIdentity = () => { myProfile = null; localStorage.removeItem('badminton_user'); updateIdentityUI(); closeIdentityModal(); renderCourts(); }
         function updateIdentityUI() {
             const nameEl = document.getElementById('myName');
             const statusEl = document.getElementById('idStatus');
-            if (myProfile) {
-                nameEl.innerText = myProfile.name;
-                nameEl.className = "font-bold text-indigo-700";
-                statusEl.className = "w-2 h-2 rounded-full bg-green-500";
-            } else {
-                nameEl.innerText = "ยังไม่ระบุตัวตน (แตะเพื่อเลือก)";
-                nameEl.className = "text-slate-500";
-                statusEl.className = "w-2 h-2 rounded-full bg-slate-300";
-            }
+            if (myProfile) { nameEl.innerText = myProfile.name; nameEl.className = "font-bold text-indigo-700"; statusEl.className = "w-2 h-2 rounded-full bg-green-500"; }
+            else { nameEl.innerText = "ระบุตัวตน"; nameEl.className = "text-slate-500"; statusEl.className = "w-2 h-2 rounded-full bg-slate-300"; }
         }
 
         // --- Render Courts ---
@@ -288,18 +217,11 @@
             const container = document.getElementById('courtsContainer');
             container.innerHTML = '';
             activeMatches.sort((a, b) => a.courtNo - b.courtNo);
-
-            if (activeMatches.length === 0) {
-                container.innerHTML = `<div class="text-center text-slate-400 py-6 col-span-full border-2 border-dashed border-slate-200 rounded-xl">สนามว่าง...</div>`;
-                return;
-            }
+            if (activeMatches.length === 0) { container.innerHTML = `<div class="text-center text-slate-400 py-6 col-span-full border-2 border-dashed border-slate-200 rounded-xl">สนามว่าง...</div>`; return; }
 
             activeMatches.forEach(m => {
                 let amIPlaying = false;
-                if (myProfile) {
-                    const allPlayers = [...m.teamA, ...m.teamB];
-                    amIPlaying = allPlayers.some(p => p.id === myProfile.id);
-                }
+                if (myProfile) { const allPlayers = [...m.teamA, ...m.teamB]; amIPlaying = allPlayers.some(p => p.id === myProfile.id); }
                 const showControls = isAdminMode || amIPlaying;
                 const controlClass = showControls ? '' : 'hidden';
                 const borderClass = amIPlaying ? 'ring-4 ring-yellow-400' : '';
@@ -309,15 +231,12 @@
                         <div class="absolute top-2 left-2 bg-white/20 px-2 rounded text-xs font-bold">Court ${m.courtNo}</div>
                         ${amIPlaying ? '<div class="absolute top-2 right-12 bg-yellow-400 text-black px-2 rounded text-[10px] font-bold animate-pulse">คิวคุณ!</div>' : ''}
                         <button onclick="cancelMatch(${m.id})" class="absolute top-2 right-2 text-white/50 hover:text-white text-xs admin-only">✖</button>
-                        
                         <div class="bg-white rounded-lg p-3 text-slate-800 mt-8">
                             <div class="flex justify-between items-center mb-1 p-1 rounded hover:bg-indigo-50 border-l-4 border-indigo-500">
                                 <div class="text-sm font-bold leading-tight pl-2">${m.teamA[0].name}<br>${m.teamA[1].name}</div>
                                 <button onclick="finishMatch(${m.id}, 'A_WIN')" class="${controlClass} bg-indigo-100 text-indigo-700 px-3 py-1 rounded-full text-xs font-bold hover:bg-indigo-200 shadow-sm border border-indigo-200">A ชนะ</button>
                             </div>
-                            <div class="flex justify-center my-1">
-                                <button onclick="finishMatch(${m.id}, 'DRAW')" class="${controlClass} bg-slate-100 text-slate-500 px-4 py-0.5 rounded-full text-[10px] font-bold hover:bg-slate-200 border border-slate-300">เสมอ</button>
-                            </div>
+                            <div class="flex justify-center my-1"><button onclick="finishMatch(${m.id}, 'DRAW')" class="${controlClass} bg-slate-100 text-slate-500 px-4 py-0.5 rounded-full text-[10px] font-bold hover:bg-slate-200 border border-slate-300">เสมอ</button></div>
                             <div class="flex justify-between items-center mt-1 p-1 rounded hover:bg-orange-50 border-l-4 border-orange-500">
                                 <div class="text-sm font-bold leading-tight pl-2">${m.teamB[0].name}<br>${m.teamB[1].name}</div>
                                 <button onclick="finishMatch(${m.id}, 'B_WIN')" class="${controlClass} bg-orange-100 text-orange-700 px-3 py-1 rounded-full text-xs font-bold hover:bg-orange-200 shadow-sm border border-orange-200">B ชนะ</button>
@@ -332,37 +251,30 @@
         // --- Logic ---
         function calculateStats(player, filter) {
             if (filter === 'all') return { value: player.score, label: 'MMR', displayClass: 'text-slate-800' };
-            const now = new Date();
-            let cutoff = new Date();
+            const now = new Date(); let cutoff = new Date();
             if (filter === 'day') cutoff.setHours(0,0,0,0);
             if (filter === 'month') { cutoff.setDate(1); cutoff.setHours(0,0,0,0); }
-
             const timestampCutoff = cutoff.getTime();
             const relevantMatches = historyList.filter(m => m.timestamp >= timestampCutoff);
             let netChange = 0; let wins = 0, draws = 0, losses = 0;
-
             relevantMatches.forEach(m => {
                 let change = 0;
                 if (m.teamA_ids.includes(player.id)) change = m.change_A;
                 else if (m.teamB_ids.includes(player.id)) change = m.change_B;
-                if (change !== 0) {
-                    netChange += change;
-                    if (change > 0 && change >= SCORE_WIN) wins++; else if (change < 0) losses++; else draws++;
-                }
+                if (change !== 0) { netChange += change; if (change > 0 && change >= SCORE_WIN) wins++; else if (change < 0) losses++; else draws++; }
             });
-
             let label = netChange > 0 ? `+${netChange}` : `${netChange}`;
             let displayClass = netChange > 0 ? 'text-green-600' : (netChange < 0 ? 'text-red-500' : 'text-slate-400');
             return { value: netChange, label, displayClass, wins, draws, losses };
         }
 
-        function getRankTier(score) {
-            if (score >= 2000) return { name: 'GRAND MASTER 🔥', color: 'rank-master', text: 'text-purple-600' };
-            if (score >= 1800) return { name: 'DIAMOND 💎', color: 'rank-diamond', text: 'text-sky-500' };
-            if (score >= 1500) return { name: 'GOLD 🥇', color: 'rank-gold', text: 'text-yellow-500' };
-            if (score >= 1300) return { name: 'SILVER 🥈', color: 'rank-silver', text: 'text-slate-500' };
-            if (score >= 1100) return { name: 'BRONZE 🥉', color: 'rank-bronze', text: 'text-orange-500' };
-            return { name: 'ROOKIE 🐣', color: 'rank-rookie', text: 'text-slate-400' };
+        function getRankInfo(score) {
+            if (score >= 2000) return { frame: 'frame-master', icon: '🔥', name: 'Grand Master' };
+            if (score >= 1800) return { frame: 'frame-diamond', icon: '💎', name: 'Diamond' };
+            if (score >= 1500) return { frame: 'frame-gold', icon: '🥇', name: 'Gold' };
+            if (score >= 1300) return { frame: 'frame-silver', icon: '🥈', name: 'Silver' };
+            if (score >= 1100) return { frame: 'frame-bronze', icon: '🥉', name: 'Bronze' };
+            return { frame: 'frame-rookie', icon: '🐣', name: 'Rookie' };
         }
 
         document.getElementById('btnAdd').onclick = async () => {
@@ -373,12 +285,7 @@
             document.getElementById('inputName').value = '';
         };
         window.togglePresence = async (id, currentStatus) => { await updateDoc(doc(db, "players", id), { isPresent: !currentStatus }); }
-        window.resetDay = async () => {
-            if(!confirm("รีเซ็ตการเช็คชื่อ?")) return;
-            const batch = writeBatch(db);
-            playersList.forEach(p => batch.update(doc(db, "players", p.id), { isPresent: false }));
-            await batch.commit();
-        }
+        window.resetDay = async () => { if(!confirm("รีเซ็ตการเช็คชื่อ?")) return; const batch = writeBatch(db); playersList.forEach(p => batch.update(doc(db, "players", p.id), { isPresent: false })); await batch.commit(); }
         window.deletePlayer = async (id) => { if(confirm("ลบคนนี้ถาวร?")) await deleteDoc(doc(db, "players", id)); }
 
         document.getElementById('btnGenerate').onclick = async () => {
@@ -393,8 +300,7 @@
             const newMatches = [...activeMatches];
             for (let i = 0; i < slots; i++) {
                 if (pool.length < 4) break;
-                let sel = pool.slice(0, 4);
-                pool = pool.slice(4);
+                let sel = pool.slice(0, 4); pool = pool.slice(4);
                 sel.sort((a, b) => b.score - a.score);
                 newMatches.push({ id: Date.now() + i, courtNo: findNextCourtNo(newMatches), teamA: [sel[0], sel[3]], teamB: [sel[1], sel[2]], startTime: Date.now() });
             }
@@ -409,9 +315,7 @@
             if (!match) return;
             const batch = writeBatch(db);
             let changeA = 0, changeB = 0;
-            if (result === 'A_WIN') { changeA = SCORE_WIN; changeB = SCORE_LOSS; }
-            else if (result === 'B_WIN') { changeA = SCORE_LOSS; changeB = SCORE_WIN; }
-            else { changeA = SCORE_DRAW; changeB = SCORE_DRAW; }
+            if (result === 'A_WIN') { changeA = SCORE_WIN; changeB = SCORE_LOSS; } else if (result === 'B_WIN') { changeA = SCORE_LOSS; changeB = SCORE_WIN; } else { changeA = SCORE_DRAW; changeB = SCORE_DRAW; }
             [...match.teamA, ...match.teamB].forEach(p => {
                 const isA = match.teamA.some(x => x.id === p.id);
                 const change = isA ? changeA : changeB;
@@ -431,7 +335,6 @@
             batch.set(systemRef, { matches: remaining });
             await batch.commit();
         };
-
         window.cancelMatch = async (matchId) => { if(!confirm("ยกเลิก?")) return; const remaining = activeMatches.filter(m => m.id !== matchId); await setDoc(systemRef, { matches: remaining }); }
         window.setFilter = (filter) => {
             currentFilter = filter;
@@ -455,27 +358,29 @@
 
             displayList.forEach((p, idx) => {
                 if (currentFilter !== 'all' && p.value === 0) return;
-                const rankInfo = getRankTier(p.score);
+                const rankInfo = getRankInfo(p.score);
                 const isPlaying = playingIds.has(p.id);
                 list.innerHTML += `
-                    <div class="flex justify-between items-center p-3 rounded-lg border border-slate-100 mb-2 ${rankInfo.color} ${!p.isPresent ? 'opacity-50 bg-slate-50 grayscale' : 'bg-white'} relative">
+                    <div class="flex justify-between items-center p-3 rounded-lg mb-2 card-base ${rankInfo.frame} ${!p.isPresent ? 'opacity-50 grayscale border-slate-200 bg-white' : ''} relative">
                         <div class="flex items-center gap-3">
                             <div class="admin-only"><input type="checkbox" ${p.isPresent ? 'checked' : ''} onchange="togglePresence('${p.id}', ${p.isPresent})" class="w-4 h-4 rounded text-indigo-600 cursor-pointer"></div>
                             <div class="font-bold text-slate-400 w-5 text-center text-sm">${idx+1}</div>
                             <div>
-                                <div class="font-bold text-slate-700 flex items-center gap-2">
-                                    ${p.name}
+                                <div class="font-bold text-slate-700 flex items-center gap-2 text-base">
+                                    ${rankInfo.icon} ${p.name}
                                     ${isPlaying ? '<span class="text-[8px] bg-indigo-500 text-white px-1.5 rounded animate-pulse">PLAYING</span>' : ''}
                                 </div>
-                                <div class="text-[10px] ${rankInfo.text} font-bold tracking-wide flex gap-2">
-                                    ${rankInfo.name} 
-                                    <span class="text-slate-400 font-normal">| W:${p.wins || 0} D:${p.draws || 0} L:${p.losses || 0}</span>
+                                <div class="text-[10px] text-slate-400 font-bold tracking-wide flex gap-2">
+                                    W:${p.wins || 0} D:${p.draws || 0} L:${p.losses || 0}
                                 </div>
                             </div>
                         </div>
-                        <div class="flex items-center gap-3">
-                            <div class="text-right"><div class="font-bold text-lg ${p.displayClass}">${p.label}</div><div class="text-[10px] text-slate-400">แข่ง ${p.matches}</div></div>
-                            <button onclick="deletePlayer('${p.id}')" class="admin-only text-slate-300 hover:text-red-500 text-xl px-2">×</button>
+                        <div class="flex items-center gap-2">
+                            <div class="text-right">
+                                <div class="font-bold text-lg ${p.displayClass}">${p.label}</div>
+                                <div class="text-[10px] text-slate-400">แข่ง ${p.matches}</div>
+                            </div>
+                            <button onclick="deletePlayer('${p.id}')" class="admin-only text-slate-300 hover:text-red-500 text-xl px-1">×</button>
                         </div>
                     </div>
                 `;
@@ -484,14 +389,8 @@
         }
 
         window.toggleAdmin = function() {
-            if(isAdminMode) {
-                isAdminMode = false; document.body.classList.remove('show-admin');
-                document.getElementById('adminPanel').classList.add('hidden'); document.getElementById('addPlayerBox').classList.add('hidden');
-                renderCourts();
-            } else {
-                const pass = prompt("Admin Password:");
-                if (pass === "1234") { isAdminMode = true; document.body.classList.add('show-admin'); document.getElementById('adminPanel').classList.remove('hidden'); document.getElementById('addPlayerBox').classList.remove('hidden'); renderCourts(); }
-            }
+            if(isAdminMode) { isAdminMode = false; document.body.classList.remove('show-admin'); document.getElementById('adminPanel').classList.add('hidden'); document.getElementById('addPlayerBox').classList.add('hidden'); renderCourts(); }
+            else { const pass = prompt("Admin Password:"); if (pass === "1234") { isAdminMode = true; document.body.classList.add('show-admin'); document.getElementById('adminPanel').classList.remove('hidden'); document.getElementById('addPlayerBox').classList.remove('hidden'); renderCourts(); } }
         }
     </script>
 </body>
